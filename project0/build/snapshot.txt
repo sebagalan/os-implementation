@@ -1,0 +1,25 @@
+8192KB memory detected, 1675 pages in freelist, 1048576 bytes in kernel heap
+Initializing IDT...
+Initializing IDT...
+g_handlerSizeNoErr 16
+g_handlerSizeErr 16
+g_entryPointTableEnd 95712
+tableBaseAddr 91616
+ g_entryPointTableEnd-g_entryPointTableStart 4096
+ g_handlerSizeNoErr*NUM_IDT_ENTRIES 4096
+Initializing timer...
+Delay loop: 14641 iterations per tick
+Initializing keyboard...
+Welcome
+g - 103s - 115 - 13 - 13 - 13 - 13 - 13 - 13 - 13 - 13
+
+
+
+
+
+
+
+
+ß
+
+

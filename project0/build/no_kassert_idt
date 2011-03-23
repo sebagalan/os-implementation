@@ -1,0 +1,25 @@
+8192KB memory detected, 1675 pages in freelist, 1048576 bytes in kernel heap
+Initializing IDT...
+Initializing IDT...
+g_handlerSizeNoErr 16
+g_handlerSizeErr 16
+g_entryPointTableEnd 95616
+tableBaseAddr 91520
+ g_entryPointTableEnd-g_entryPointTableStart 4096
+ g_handlerSizeNoErr*NUM_IDT_ENTRIES 4096
+Initializing timer...
+Delay loop: 14641 iterations per tick
+Initializing keyboard...
+Welcome to GeekOS!
+Unimplemented feature: Start a kernel thread to echo pressed keys and print coun
+ts
+ß
+
+
+
+
+
+
+
+
+
