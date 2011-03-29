@@ -173,9 +173,9 @@ static void Keyboard_Interrupt_Handler(struct Interrupt_State* state)
 	/* There is a byte available */
 	scanCode = In_Byte(KB_DATA);
 	IO_Delay();
-/*
- *	Print("code=%x%s\n", scanCode, (scanCode&0x80) ? " [release]" : "");
- */
+
+//	Print("code=%x%s\n", scanCode, (scanCode&0x80) ? " [release]" : "");
+
 
 	if (scanCode & KB_KEY_RELEASE) {
 	    release = true;

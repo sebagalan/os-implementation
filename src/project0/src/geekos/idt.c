@@ -55,7 +55,11 @@ void Init_IDT(void)
     ulong_t tableBaseAddr = (ulong_t) &g_entryPointTableStart;
     ulong_t addr;
 
-    Print("Initializing IDT...\n");
+	Print("Initializing IDT...\n");
+	Print(" (&g_entryPointTableEnd - &g_entryPointTableStart) = %i \n",&g_entryPointTableEnd - &g_entryPointTableStart);
+    Print(" g_handlerSizeErr %i - g_handlerSizeNoErr %i \n",g_handlerSizeErr,g_handlerSizeNoErr);
+    Print(" %i \n",g_handlerSizeNoErr * NUM_IDT_ENTRIES);
+
 
     /* Make sure the layout of the entry point table is as we expect. */
     KASSERT(g_handlerSizeNoErr == g_handlerSizeErr);

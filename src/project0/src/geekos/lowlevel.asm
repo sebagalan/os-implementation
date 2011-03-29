@@ -68,7 +68,7 @@ REG_SKIP equ (11*4)
 ; an explicit processor-generated error code.
 ; The argument is the interrupt number.
 %macro Int_With_Err 1
-align 8
+align 16
 	push	dword %1	; push interrupt number
 	jmp	Handle_Interrupt ; jump to common handler
 %endmacro
@@ -338,7 +338,7 @@ Int_No_Err 7
 align 8
 Before_Err:
 Int_With_Err 8
-align 8
+align 8		 
 After_Err:
 Int_No_Err 9	; FIXME: not described in 486 manual
 Int_With_Err 10
