@@ -30,6 +30,60 @@
 int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
     struct Exe_Format *exeFormat)
 {
-    TODO("Parse an ELF executable image");
+
+	elfHeader *elfh = NULL;
+	programHeader *ph = NULL;
+	
+	exeFormat = Malloc(sizeof(struct Exe_Format));
+	KASSERT(exeFormat != NULL);
+	memset(exeFormat,0,sizeof(struct Exe_Format));
+	KASSERT(exeFormat != NULL);
+	
+	elfh = Malloc(sizeof(elfHeader));
+	KASSERT(elfh != NULL);
+	memset(elfh,0,sizeof(elfHeader));
+	KASSERT(elfh != NULL);
+
+	ph = Malloc(sizeof(programHeader));
+	KASSERT(ph != NULL);
+	memset(ph,0,sizeof(programHeader));
+	KASSERT(ph != NULL);
+
+	memcpy(elfh,exeFileData,sizeof(elfHeader));
+	
+	Print("file size %ul\n",exeFileLength);
+	
+	Print("%s\n",elfh	->	ident);
+	Print("elfh ->	type %i\n",elfh	->	type);
+	Print("elfh ->	machine %i\n",elfh	->	machine);
+	Print("elfh ->	version %i\n",elfh	->	version);
+	Print("elfh ->	entry %i\n",elfh	->	entry);
+	Print("elfh ->	phoff %i\n",elfh	->	phoff);
+	Print("elfh ->	sphoff %i\n",elfh	->	sphoff);
+	Print("elfh ->	flags %i\n",elfh	->	flags);
+	Print("elfh ->	ehsize %i\n",elfh	->	ehsize);
+	Print("elfh ->	phentsize %i\n",elfh	->	phentsize);
+	Print("elfh ->	phnum %i\n",elfh	->	phnum);
+	Print("elfh ->	shentsize %i\n",elfh	->	shentsize);
+	Print("elfh ->	shnum %i\n",elfh	->	shnum);
+	Print("elfh ->	shstrndx %i\n",elfh	->	shstrndx);
+
+	memcpy(ph,exeFileData+elfh->phoff,(elfh->phnum*elfh->phentsize));
+
+	Print("ph ->	type %u\n",ph -> type);
+    Print("ph ->	offset %u\n",ph -> offset);
+    Print("ph ->	vaddr %u\n",ph -> vaddr);
+    Print("ph ->	paddr %u\n",ph -> paddr);
+    Print("ph ->	fileSize %u\n",ph -> fileSize);
+    Print("ph ->	memSize %u\n",ph -> memSize);
+    Print("ph ->	flags %u\n",ph -> flags);
+    Print("ph ->	alignment %u\n",ph -> alignment);
+
+	Free(elfh);
+	Free(ph);
+
+    /*TODO("Parse an ELF executable image");*/
+
+	return -1;
 }
 

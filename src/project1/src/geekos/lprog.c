@@ -27,7 +27,7 @@ static void Printrap_Handler(struct Interrupt_State* state);
 
 static void * virtSpace;
 
-static int lprogdebug = 0;
+static int lprogdebug = 1;
 
 /*
  * Spawn_Program() sets up the memory space, and kickstarts the program
@@ -52,8 +52,10 @@ static int Spawn_Program(char *exeFileData, struct Exe_Format *exeFormat)
   }
 
   /* setup some memory space for the program */
-
+	
   virtSize = Round_Up_To_Page(maxva) + 4096; /* leave some slack for stack */
+ 
+  
   virtSpace = Malloc(virtSize);
   memset((char *) virtSpace, '\0', virtSize);
 

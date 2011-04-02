@@ -1,0 +1,25 @@
+ELF
+elfh -> type 2
+elfh -> machine 3
+elfh -> version 1
+elfh -> entry 4096
+elfh -> phoff 52
+elfh -> sphoff 4416
+elfh -> flags 0
+elfh -> ehsize 52
+elfh -> phentsize 32
+elfh -> phnum 3
+elfh -> shentsize 40
+elfh -> shnum 7
+elfh -> shstrndx 4
+ph ->   type 1
+ph ->   offset 4096
+ph ->   vaddr 4096
+ph ->   paddr 4096
+ph ->   fileSize 162
+ph ->   memSize 162
+ph ->   flags 5
+ph ->   alignment 4096
+Failed assertion in brel: b->bh.bsize < 0 at ../src/geekos/bget.c, line 865, RA=
+13ecc, thread=0x0000a000
+ß
