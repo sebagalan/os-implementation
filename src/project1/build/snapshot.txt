@@ -1,25 +1,25 @@
-ELF
-elfh -> type 2
-elfh -> machine 3
-elfh -> version 1
-elfh -> entry 4096
-elfh -> phoff 52
-elfh -> sphoff 4416
-elfh -> flags 0
-elfh -> ehsize 52
-elfh -> phentsize 32
-elfh -> phnum 3
-elfh -> shentsize 40
-elfh -> shnum 7
-elfh -> shstrndx 4
-ph ->   type 1
-ph ->   offset 4096
-ph ->   vaddr 4096
-ph ->   paddr 4096
-ph ->   fileSize 162
-ph ->   memSize 162
-ph ->   flags 5
-ph ->   alignment 4096
-Failed assertion in brel: b->bh.bsize < 0 at ../src/geekos/bget.c, line 865, RA=
-13ecc, thread=0x0000a000
+ph->type 1 ph->offset 4096 ph->vaddr 4096 ph->paddr 4096ph->fileSize 162ph->memS
+ize 162ph->flags 5ph->alignment 4096
+ph->type 1 ph->offset 4288 ph->vaddr 8384 ph->paddr 8384ph->fileSize 40ph->memSi
+ze 40ph->flags 6ph->alignment 4096
+ph->type 1685382481 ph->offset 0 ph->vaddr 0 ph->paddr 0ph->fileSize 0ph->memSiz
+e 0ph->flags 6ph->alignment 4
+Parse_ELF_Executable OK
+Spawn_Program(): all structures are set up
+ virtSpace    = 1e8f5c
+ virtSize     = 1000
+ codeSelector = 20
+ dataSelector = 28
+Now calling Trampoline()...
+*** Unexpected interrupt! ***
+eax=000000ff ebx=00000020 ecx=00000000 edx=00000028
+esi=00000000 edi=00000000 ebp=0000bf74
+eip=00001006 cs=00000020 eflags=00010206
+Interrupt number=6, error code=0
+index=0, TI=0, IDT=0, EXT=0
+cs: index=4, ti=0, rpl=0
+ds: index=5, ti=0, rpl=0
+es: index=5, ti=0, rpl=0
+fs: index=0, ti=0, rpl=0
+gs: index=0, ti=0, rpl=0
 ß
