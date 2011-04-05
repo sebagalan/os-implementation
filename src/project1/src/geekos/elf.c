@@ -67,8 +67,8 @@ int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
 	offset = elfh->phoff;
 
 	for(i=0;i< elfh->phnum; i++){
-
 		ph =  (programHeader *)(exeFileData+offset);
+
 /*		Print("ph->type %u ",ph->type);
 		Print("ph->offset %u ",ph->offset);
 		Print("ph->vaddr %u ",ph->vaddr);
@@ -82,7 +82,7 @@ int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
 		exeFormat->segmentList[i].lengthInFile = ph->fileSize;	 
 		exeFormat->segmentList[i].startAddress = ph->vaddr;
 		exeFormat->segmentList[i].sizeInMemory = ph->memSize;
-		exeFormat->segmentList[i].protFlags = ph -> flags;
+		exeFormat->segmentList[i].protFlags = ph->flags;
 		offset = offset+32;
 	}
 	
