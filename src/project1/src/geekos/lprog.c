@@ -90,6 +90,7 @@ static int Spawn_Program(char *exeFileData, struct Exe_Format *exeFormat)
   dataSelector = Selector( 0, true, Get_Descriptor_Index( desc ) );
 
   Install_Interrupt_Handler( 0x90, &Printrap_Handler );
+  Print("Spawn_Program\n");
 
   if (lprogdebug)
     {

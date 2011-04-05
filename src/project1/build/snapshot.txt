@@ -1,25 +1,25 @@
-ph->type 1 ph->offset 4096 ph->vaddr 4096 ph->paddr 4096ph->fileSize 162ph->memS
-ize 162ph->flags 5ph->alignment 4096
-ph->type 1 ph->offset 4288 ph->vaddr 8384 ph->paddr 8384ph->fileSize 40ph->memSi
-ze 40ph->flags 6ph->alignment 4096
-ph->type 1685382481 ph->offset 0 ph->vaddr 0 ph->paddr 0ph->fileSize 0ph->memSiz
-e 0ph->flags 6ph->alignment 4
+Initializing timer...
+Delay loop: 14640 iterations per tick
+Initializing keyboard...
+Initializing DMA Controller...
+Initializing floppy controller...
+    fd0: cyl=80, heads=2, sectors=18
+Initializing IDE controller...
+    ide0: cyl=40, heads=8, sectors=64
+Mounted /c filesystem!
+Welcome to GeekOS!
+Starting the Spawner thread...
+Reading /c/a.exe...
+Read_Fully OK
 Parse_ELF_Executable OK
+Spawn_Program
 Spawn_Program(): all structures are set up
- virtSpace    = 1e8f5c
- virtSize     = 1000
+ virtSpace    = 1e601c
+ virtSize     = 4000
  codeSelector = 20
  dataSelector = 28
 Now calling Trampoline()...
-*** Unexpected interrupt! ***
-eax=000000ff ebx=00000020 ecx=00000000 edx=00000028
-esi=00000000 edi=00000000 ebp=0000bf74
-eip=00001006 cs=00000020 eflags=00010206
-Interrupt number=6, error code=0
-index=0, TI=0, IDT=0, EXT=0
-cs: index=4, ti=0, rpl=0
-ds: index=5, ti=0, rpl=0
-es: index=5, ti=0, rpl=0
-fs: index=0, ti=0, rpl=0
-gs: index=0, ti=0, rpl=0
+Hi ! This is the first string
+Hi ! This is the third (and last) string
+If you see this you're happy
 ß
