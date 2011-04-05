@@ -23,12 +23,28 @@ void ELF_Print(char* msg);
  * ¿Tendra que ver la tabla de simbolos, o las secciones?*/
 
 
+/*Ya que estamos, hagamos que explote ... total no hay proteccion de 
+ * memoria... o si?*/
+
 char  s1[40] = "Hi ! This is the first string\n";
 
 int main(int argc, char** argv)
 {
-/*	char  s2[40] = "Hi ! This is the second string\n"; */
-	char  *s2 = "Hi ! This is the second string\n";
+					
+/*	char  *s2 = "Hi ! This is the second string\n";*/
+	int i = 0;
+	char  s2[40] = "Hi ! This is the second string\n";
+
+	/*while(1){
+		si no lo imprime, no deberia imprimirlo nunca
+		ELF_Print(&s2[0]);
+	}*/
+
+	while(1){
+		/*encuentra el string ... y se muere*/
+		ELF_Print(&s2[i]);
+		i++;
+	}
 
 	ELF_Print(s1);
 	ELF_Print(s2); 

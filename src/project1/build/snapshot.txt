@@ -1,25 +1,25 @@
-8192KB memory detected, 1668 pages in freelist, 1048576 bytes in kernel heap
-Initializing IDT...
- (&g_entryPointTableEnd - &g_entryPointTableStart) = 4096
- g_handlerSizeErr 16 - g_handlerSizeNoErr 16
- 4096
-Initializing timer...
-Delay loop: 14640 iterations per tick
-Initializing keyboard...
-Initializing DMA Controller...
-Initializing floppy controller...
-    fd0: cyl=80, heads=2, sectors=18
-Initializing IDE controller...
-    ide0: cyl=40, heads=8, sectors=64
-Mounted /c filesystem!
-Welcome to GeekOS!
-Starting the Spawner thread...
-Hi ! This is the first string
-Hi ! This is the second string
-Hi ! This is the third (and last) string
-If you see this you're happy
-ß
+is the second string
+s the second string
+ the second string
+the second string
+he second string
+e second string
+ second string
+second string
+econd string
+cond string
+ond string
+nd string
+d string
+ string
+string
+tring
+ring
+ing
+ng
+g
 
-
-
-
+øýÿÿýÿÿÿÿÿ2xx ¡øØ@Ø@@@ ÿÿÿÿÿÿÿÿÿ2xx ¡øØ@ÌÜØ@ÌÜ@ÌÜ@ÌÜÌÜÜÄÚ
+Ú”ÚÚ”ÚÚðÿÿÿcÿÿÿcÿÿcÿccàÿÿÿÐðÿÿÿÐðÿÿÐðÿÐðÐðð<      Ü   Ü
+ÿÿÿñÿÿÿñÿÿñÿñññpfatfatattÈÿÿÿide0ÿÿÿide0ÿÿide0ÿide0ide0de0e00Äðð
+èàÈ   Èÿÿÿfd0ÿÿÿfd0ÿÿfd0ÿfd0fd0d00¸ðð@H   €ß
