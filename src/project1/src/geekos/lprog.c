@@ -27,7 +27,7 @@ static void Printrap_Handler(struct Interrupt_State* state);
 
 static void * virtSpace;
 
-static int lprogdebug = 1;
+static int lprogdebug = 0;
 
 /*
  * Spawn_Program() sets up the memory space, and kickstarts the program
@@ -57,7 +57,7 @@ static int Spawn_Program(char *exeFileData, struct Exe_Format *exeFormat)
  
   
   virtSpace = Malloc(virtSize);
-  memset((char *) virtSpace, '\0', virtSize);
+  memset((char *) virtSpace,0, virtSize);
 
   /* Load segment data into memory */
   for (i = 0; i < exeFormat->numSegments; ++i) {

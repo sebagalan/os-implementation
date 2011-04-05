@@ -27,57 +27,29 @@
  *   and entry address; to be filled in
  * @return 0 if successful, < 0 on error
  */
+
+
+/*typedef enum e_tag {
+	PT_NULL=0, PT_LOAD , PT_DYNAMIC ,
+	PT_INTERP,PT_NOTE,PT_SHLIB,
+	PT_PHDR, PT_LOPROC=0x70000000,
+	PT_IOPROC = 0x7fffffff} P_TYPE;*/
+
 int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
-    struct Exe_Format *exeFormat)
-{
+    struct Exe_Format *exeFormat){
+
 	int i=0, offset=0;
-	
 	elfHeader *elfh = NULL;
 	programHeader *ph = NULL;
 
-/*	exeFormat = Malloc(sizeof(struct Exe_Format));
-	KASSERT(exeFormat != NULL);
-	memset(exeFormat,'\0',sizeof(struct Exe_Format));
-	KASSERT(exeFormat != NULL);
-	
-	elfh = Malloc(sizeof(elfHeader));
-	KASSERT(elfh != NULL);
-	memset(elfh,0,sizeof(elfHeader));
-	KASSERT(elfh != NULL);
-
-	elfh = memcpy(elfh,exeFileData,sizeof(elfHeader));
-	
-	Print("file size %u\n",exeFileLength);
-	Print("%s\n",elfh	->	ident);
-	Print("elfh ->	type %i\n",elfh->type);
-	Print("elfh ->	machine %i\n",elfh->machine);
-	Print("elfh ->	version %i\n",elfh->version);
-	Print("elfh ->	entry %i\n",elfh->entry);
-	Print("elfh ->	phoff %i\n",elfh->phoff);
-	Print("elfh ->	sphoff %i\n",elfh->sphoff);
-	Print("elfh ->	flags %i\n",elfh->flags);
-	Print("elfh ->	ehsize %i\n",elfh->ehsize);
-	Print("elfh ->	phentsize %i\n",elfh->phentsize);
-	Print("elfh ->	phnum %i\n",elfh->phnum);
-	Print("elfh ->	shentsize %i\n",elfh->shentsize);
-	Print("elfh ->	shnum %i\n",elfh->shnum);
-	Print("elfh ->	shstrndx %i\n",elfh->shstrndx);*/
-
+	KASSERT(exeFormat!=NULL);
+	memset(exeFormat,0,sizeof(struct Exe_Format));
+		
 	elfh = (elfHeader*) exeFileData;
 	offset = elfh->phoff;
 
 	for(i=0;i< elfh->phnum; i++){
 		ph =  (programHeader *)(exeFileData+offset);
-
-/*		Print("ph->type %u ",ph->type);
-		Print("ph->offset %u ",ph->offset);
-		Print("ph->vaddr %u ",ph->vaddr);
-		Print("ph->paddr %u",ph->paddr);
-		Print("ph->fileSize %u",ph->fileSize);
-		Print("ph->memSize %u",ph->memSize);
-		Print("ph->flags %u",ph->flags);
-		Print("ph->alignment %u\n",ph->alignment);*/
-
 		exeFormat->segmentList[i].offsetInFile= ph->offset;	 
 		exeFormat->segmentList[i].lengthInFile = ph->fileSize;	 
 		exeFormat->segmentList[i].startAddress = ph->vaddr;
@@ -85,7 +57,7 @@ int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
 		exeFormat->segmentList[i].protFlags = ph->flags;
 		offset = offset+32;
 	}
-	
+
 	exeFormat->numSegments = elfh->phnum ;
 	exeFormat->entryAddr = elfh->entry;	 	
     /*TODO("Parse an ELF executable image");*/

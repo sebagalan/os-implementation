@@ -1,3 +1,8 @@
+8192KB memory detected, 1668 pages in freelist, 1048576 bytes in kernel heap
+Initializing IDT...
+ (&g_entryPointTableEnd - &g_entryPointTableStart) = 4096
+ g_handlerSizeErr 16 - g_handlerSizeNoErr 16
+ 4096
 Initializing timer...
 Delay loop: 14640 iterations per tick
 Initializing keyboard...
@@ -9,17 +14,12 @@ Initializing IDE controller...
 Mounted /c filesystem!
 Welcome to GeekOS!
 Starting the Spawner thread...
-Reading /c/a.exe...
-Read_Fully OK
-Parse_ELF_Executable OK
-Spawn_Program
-Spawn_Program(): all structures are set up
- virtSpace    = 1e601c
- virtSize     = 4000
- codeSelector = 20
- dataSelector = 28
-Now calling Trampoline()...
 Hi ! This is the first string
+Hi ! This is the second string
 Hi ! This is the third (and last) string
 If you see this you're happy
 ß
+
+
+
+

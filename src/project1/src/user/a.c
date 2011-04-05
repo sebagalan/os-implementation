@@ -13,13 +13,22 @@
  * no formatting or other fancy features */
 void ELF_Print(char* msg);
 
+/*s2 se imprime si cambio su definicion. En lugar que sea 
+ * char s2[40], tiene que ser char *s2 para que funcione.
+ * Si es char *s2 entonces s2 figura dentro de la seccion
+ * .rodata (solo lectura). Si s2 es char s2[40], figura
+ * dentro de .text (aunque deberia ser parte del stack).
+ 
+ * Es una variable inicializada ... ¿Porque esta dentro de text?
+ * ¿Tendra que ver la tabla de simbolos, o las secciones?*/
+
 
 char  s1[40] = "Hi ! This is the first string\n";
 
 int main(int argc, char** argv)
 {
-	char  s2[40] = "Hi ! This is the second string\n"; 
-/*	char  *s2 = "Hi ! This is the second string\n";*/
+/*	char  s2[40] = "Hi ! This is the second string\n"; */
+	char  *s2 = "Hi ! This is the second string\n";
 
 	ELF_Print(s1);
 	ELF_Print(s2); 
