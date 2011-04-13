@@ -17,7 +17,6 @@
 #include <geekos/string.h>
 #include <geekos/elf.h>
 
-
 /**
  * From the data of an ELF executable, determine how its segments
  * need to be loaded into memory.
@@ -28,40 +27,49 @@
  * @return 0 if successful, < 0 on error
  */
 
+int Parse_ELF_Executable(char *exeFileData,
+			 ulong_t exeFileLength,
+			 struct Exe_Format *exeFormat)
+{
+  KASSERT(exeFileData!=NULL);
+  KASSERT(exeFileLength>=0);
+  KASSERT(exeFormat!=NULL);
 
-/*typedef enum e_tag {
-	PT_NULL=0, PT_LOAD , PT_DYNAMIC ,
-	PT_INTERP,PT_NOTE,PT_SHLIB,
-	PT_PHDR, PT_LOPROC=0x70000000,
-	PT_IOPROC = 0x7fffffff} P_TYPE;*/
+  elfHeader *elf = (elfHeader *) exeFileData;
 
-int Parse_ELF_Executable(char *exeFileData, ulong_t exeFileLength,
-    struct Exe_Format *exeFormat){
+  KASSERT(elf->ident[0] == 0x7f);
+  KASSERT(elf->ident[1] == 'E');
+  KASSERT(elf->ident[2] == 'L');
+  KASSERT(elf->ident[3] == 'F');
+  KASSERT(elf->type = 0x2);
+  KASSERT(elf->version == 0x1);
+  KASSERT(elf->phnum > 0);
+  KASSERT(elf->machine = 0x3);
+  KASSERT(elf->entry < exeFileLength);
+  KASSERT(elf->phoff < exeFileLength);
+  KASSERT(elf->sphoff < exeFileLength);
+  KASSERT(elf->ehsize == sizeof(elfHeader));
+  KASSERT(elf->phentsize == sizeof(programHeader));
 
-	int i=0, offset=0;
-	elfHeader *elfh = NULL;
-	programHeader *ph = NULL;
+  exeFormat->entryAddr = elf->entry;
+  exeFormat->numSegments = elf->phnum;
 
-	KASSERT(exeFormat!=NULL);
-	memset(exeFormat,0,sizeof(struct Exe_Format));
-		
-	elfh = (elfHeader*) exeFileData;
-	offset = elfh->phoff;
+  int i;
+  for (i = 0; i < elf->phnum; i++) {
 
-	for(i=0;i< elfh->phnum; i++){
-		ph =  (programHeader *)(exeFileData+offset);
-		exeFormat->segmentList[i].offsetInFile= ph->offset;	 
-		exeFormat->segmentList[i].lengthInFile = ph->fileSize;	 
-		exeFormat->segmentList[i].startAddress = ph->vaddr;
-		exeFormat->segmentList[i].sizeInMemory = ph->memSize;
-		exeFormat->segmentList[i].protFlags = ph->flags;
-		offset = offset+32;
-	}
+    programHeader *program =
+      (programHeader *) (exeFileData + elf->phoff + elf->phentsize * i);
+    
+    KASSERT(program->offset < exeFileLength);
+    KASSERT(program->fileSize < exeFileLength);
+    KASSERT(program->memSize < exeFileLength);
 
-	exeFormat->numSegments = elfh->phnum ;
-	exeFormat->entryAddr = elfh->entry;	 	
-    /*TODO("Parse an ELF executable image");*/
-	
-	return 0;
+    exeFormat->segmentList[i].offsetInFile = program->offset;
+    exeFormat->segmentList[i].lengthInFile = program->fileSize;
+    exeFormat->segmentList[i].startAddress = program->vaddr;
+    exeFormat->segmentList[i].sizeInMemory = program->memSize;
+    exeFormat->segmentList[i].protFlags = program->flags;
+  }
+
+  return 0;
 }
-
