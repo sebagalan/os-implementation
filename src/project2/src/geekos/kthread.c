@@ -17,6 +17,7 @@
 #include <geekos/kthread.h>
 #include <geekos/malloc.h>
 
+#include <geekos/user.h>
 
 /* ----------------------------------------------------------------------
  * Private data
@@ -303,17 +304,69 @@ static void Setup_Kernel_Thread(
 /*static*/ void Setup_User_Thread(
     struct Kernel_Thread* kthread, struct User_Context* userContext)
 {
-    /*
-     * Hints:
+
+	/* Setup_User_Thread() to get the thread ready to
+     * execute in user mode	*/
+    KASSERT( kthread != NULL && userContext != NULL); 
+	
+    /* Hints:
      * - Call Attach_User_Context() to attach the user context
-     *   to the Kernel_Thread
-     * - Set up initial thread stack to make it appear that
+     *   to the Kernel_Thread 
+     * Lo unico que hace es asignar el puntero adentro de la estructura*/
+
+    Attach_User_Context( kthread, userContext);
+
+	/* - Set up initial thread stack to make it appear that
      *   the thread was interrupted while in user mode
      *   just before the entry point instruction was executed
-     * - The esi register should contain the address of
-     *   the argument block
-     */
-    TODO("Create a new thread to execute in user mode");
+	 *	 Es como hacer Push de todo lo que ..... ??? $#%$#&#$		
+				
+		Stack Data Selector (data selector)
+		Stack Pointer (end of data memory)
+		Eflags ????
+		Text Selector (code selector)
+		Program Counter (entry addr)
+		Error Code (0)
+		Interrupt Number (0)
+		EAX (0)
+		EBX (0)
+		ECX (0)
+		EDX (0)
+		ESI (Argument Block address) 
+		EDI (0)
+		EBP (0)
+		DS (data selector)
+		ES (data selector)
+		FS (data selector)
+		GS (data selector)
+	
+	*- The esi register should contain the address of
+	*	the argument block  */
+     
+	Push(kthread,userContext->dsSelector);
+	Push(kthread,userContext->stackPointerAddr);
+	/* EFLAGS - aca no se - ver Setup_Kernel_Thread
+	 * http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/#ldtgdt
+	 * */
+	Push(kthread, 0UL);  
+	Push(kthread,userContext->csSelector);
+	Push(kthread,userContext->entryAddr);
+	Push(kthread,0); /*	Error Code (0)*/
+	Push(kthread,0); /*	Interrupt Number (0) */
+	Push(kthread,0); /*	EAX (0)*/
+	Push(kthread,0); /*	EBX (0)*/
+	Push(kthread,0); /*	ECX (0)*/
+	Push(kthread,0); /*	EDX (0)*/
+	Push(kthread,userContext->argBlockAddr); /*	ESI (Argument Block address)*/	
+	Push(kthread,0); /*	EDI (0)*/
+	Push(kthread,0); /*	EBP (0)*/
+	Push(kthread,userContext->dsSelector); /* DS (data selector) */
+	Push(kthread,userContext->dsSelector); /* ES (data selector) */
+	Push(kthread,userContext->dsSelector); /* FS (data selector) */
+	Push(kthread,userContext->dsSelector); /* GS (data selector) */
+
+//    TODO("Create a new thread to execute in user mode");
+
 }
 
 
@@ -515,7 +568,17 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
      * - Call Make_Runnable_Atomic() to schedule the process
      *   for execution
      */
-    TODO("Start user thread");
+	struct Kernel_Thread *kthread = NULL;
+        
+//	TODO("Start user thread");
+	Print("Start user thread");
+	
+	kthread = Create_Thread(PRIORITY_USER ,detached);
+	if(kthread!=NULL){
+		Setup_User_Thread(kthread,userContext);
+		Make_Runnable_Atomic(kthread);
+	}
+    return kthread;
 }
 
 /*
