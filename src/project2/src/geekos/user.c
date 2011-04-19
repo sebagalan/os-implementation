@@ -97,8 +97,42 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      *
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
-     */
-    TODO("Spawn a process by reading an executable from a filesystem");
+     *
+     * 
+     * lo mismo que lprog.c en project1? seguramente cambia algo...*/
+    
+	char *exeFileData = 0;
+	ulong_t exeFileLength;
+	struct Exe_Format exeFormat;
+	struct User_Context *userContext = NULL;
+
+	if (Read_Fully(program, (void**) &exeFileData, &exeFileLength) != 0){
+		Print("Read_Fully failed to read %s from disk\n", program);
+		return -1;
+	}
+
+	if (Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat) != 0){
+		Print("Parse_ELF_Executable failed\n");
+		return -2;
+	}
+
+	if(Load_User_Program(exeFileData, exeFileLength, &exeFormat, command, &userContext) != 0){
+		Print("Load_User_Program failed\n");
+		return -3;
+	}
+	
+	*pThread = Start_User_Thread(userContext, true);
+	
+	if (*pThread == NULL){
+		Print("Start_User_Thread failed\n");
+		return -4; 	
+	}
+
+   //TODO("Spawn a process by reading an executable from a filesystem");
+   Print("Spawn a process by reading an executable from a filesystem");
+   
+   /* The kernel thread id; also used as process id */
+	return (*pThread)->pid ;
 }
 
 /*
@@ -117,6 +151,9 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
      * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
      * functions.
      */
+     
+     KASSERT(kthread!=NULL && state!=NULL);
+     
     TODO("Switch to a new user address space, if necessary");
 }
 
