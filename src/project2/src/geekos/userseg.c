@@ -37,10 +37,27 @@
  * Create a new user context of given size
  */
 
-/* TODO: Implement
-static struct User_Context* Create_User_Context(ulong_t size)
-*/
-
+/* TODO: Implement*/
+static struct User_Context* Create_User_Context(ulong_t size){
+	
+	struct User_Context *userContext;
+	userContext = (struct User_Context *)Malloc(sizeof(struct User_Context));
+	if(userContext != NULL ){
+		memset(&userContext,0,sizeof(struct User_Context));
+	
+		userContext->memory = (char *)Malloc(sizeof(char)*size);
+		userContext->size = size;
+	}
+	/*
+	-	create an LDT for the process
+	-	add a descriptor to the GDT that describes the location of the LDT
+	-	create a selector that contains the location of the LDT descriptor within the GDT
+	-	create descriptors for the code and data segments of the user program and add these descriptors to the LDT
+	-	create selectors that contain the locations of the two descriptors within the LDT
+	* */
+	
+	return userContext;
+}
 
 static bool Validate_User_Memory(struct User_Context* userContext,
     ulong_t userAddr, ulong_t bufSize)
@@ -98,6 +115,8 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
     struct Exe_Format *exeFormat, const char *command,
     struct User_Context **pUserContext)
 {
+	/* Lo mismo que hace lprog.c*/
+
     /*
      * Hints:
      * - Determine where in memory each executable segment will be placed
@@ -109,7 +128,65 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
      *   address, argument block address, and initial kernel stack pointer
      *   address
      */
-    TODO("Load a user executable into a user memory space using segmentation");
+
+	unsigned long virtSize;
+	unsigned int numArgs = 0;
+	ulong_t argBlockSize = 0;
+	int i=0;
+	ulong_t maxva = 0;	/*maximun virtual addres*/
+	
+	/* Find maximum virtual address - scan Exec_Format*/
+	for (i = 0; i < exeFormat->numSegments; ++i) {
+		struct Exe_Segment *segment = &exeFormat->segmentList[i];
+		ulong_t topva = segment->startAddress + segment->sizeInMemory; 
+
+		if (topva > maxva){
+			maxva = topva;
+		}
+	}
+	
+	/* 
+	* -find args size
+	* -setup some memory space for the program 
+	* argBlockSize tiene el tamaño total del bloque de argumentos
+	* size = Round_Up_To_Page(highest virtual address) + Round_Up_To_Page(DEFAULT_USER_STACK_SIZE + argument block size)
+	*/
+
+	Get_Argument_Block_Size(command, &numArgs,  &argBlockSize);
+	virtSize = Round_Up_To_Page(maxva) + Round_Up_To_Page(DEFAULT_USER_STACK_SIZE + argBlockSize); 
+	(*pUserContext) = Create_User_Context(virtSize);
+	
+	/* Lo mismo que hace lprog.c, pero los segmentos adentro del TAD
+	 * User_Context*/
+	
+	if ((*pUserContext) != NULL){
+		for (i = 0; i < exeFormat->numSegments; ++i) {
+			struct Exe_Segment *segment = &exeFormat->segmentList[i];
+			memcpy( (*pUserContext)->memory  + segment->startAddress,
+			   exeFileData + segment->offsetInFile,
+			   segment->lengthInFile);
+		}
+		
+		/* - Format argument block in memory
+		 * (*pUserContext)->memory+maxva es una direccion de memoria que esta
+		 * por arriba de los segmentos de codigo y datos, (¿Cae adentro del stack?).
+		 * Esta adentro del segmento asi que es parte de la memoria que tiene 
+		 * el proceso.	
+		 * */
+		Format_Argument_Block( (char *) (*pUserContext)->memory+maxva ,numArgs, maxva , command);
+	
+		/*entradas en el TAD que faltan completar*/	
+		(*pUserContext)->entryAddr =  exeFormat->entryAddr;
+		(*pUserContext)->argBlockAddr = (ulong_t) (*pUserContext)->memory + maxva;
+		(*pUserContext)->stackPointerAddr = (ulong_t) (*pUserContext)->memory + maxva + argBlockSize;
+
+		/* idea: armar algo como: |cs|ds|argBlock|stack...| */
+	} 
+	
+	/*TODO("Load a user executable into a user memory space using segmentation");*/
+	Print("Load a user executable into a user memory space using segmentation");
+
+	return 0;
 }
 
 /*
