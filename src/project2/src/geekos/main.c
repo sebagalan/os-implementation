@@ -43,7 +43,8 @@
 #  define ROOT_PREFIX "c"
 #endif
 
-#define INIT_PROGRAM "/" ROOT_PREFIX "/shell.exe"
+/*#define INIT_PROGRAM "/" ROOT_PREFIX "/shell.exe"*/
+#define INIT_PROGRAM "/" ROOT_PREFIX "/null.exe"
 
 
 
@@ -83,7 +84,9 @@ void Main(struct Boot_Info* bootInfo)
 
     Spawn_Init_Process();
 
-    /* Now this thread is done. */
+    /* Now this thread is done. 
+     * Que nunca retorne, porque la syscall Exit() no está implementada.
+     * (...todavia...)*/
     Exit(0);
 }
 
@@ -98,12 +101,12 @@ static void Mount_Root_Filesystem(void)
 
 }
 
+static void Spawn_Init_Process(void){
 
-
-
-
-
-static void Spawn_Init_Process(void)
-{
-    TODO("Spawn the init process");
+   /* TODO("Spawn the init process");*/
+    int pid = 0;
+    struct Kernel_Thread *pThread = NULL;
+	pid = Spawn(INIT_PROGRAM,"null.exe", &pThread);
+	Print("pid de null.exe == %i \n",pid);
+	for(;;);
 }
