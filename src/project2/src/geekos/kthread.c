@@ -366,6 +366,7 @@ static void Setup_Kernel_Thread(
 	Push(kthread,userContext->dsSelector); /* GS (data selector) */
 
 //    TODO("Create a new thread to execute in user mode");
+	Print("Create a new thread to execute in user mode\n");
 
 }
 
@@ -569,15 +570,15 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
      *   for execution
      */
 	struct Kernel_Thread *kthread = NULL;
-        
-//	TODO("Start user thread");
-	Print("Start user thread");
 	
 	kthread = Create_Thread(PRIORITY_USER ,detached);
 	if(kthread!=NULL){
 		Setup_User_Thread(kthread,userContext);
 		Make_Runnable_Atomic(kthread);
 	}
+
+	Print("Start user thread\n");
+
     return kthread;
 }
 
