@@ -105,10 +105,12 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
 	ulong_t exeFileLength;
 	struct Exe_Format exeFormat;
 	struct User_Context *userContext = NULL;
-
-	if (Read_Fully(program, (void**) &exeFileData, &exeFileLength) != 0){
+	int rc= 0;
+	
+	rc = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+	if (rc != 0){
 		Print("Read_Fully failed to read %s from disk\n", program);
-		return -1;
+		return rc;
 	}
 
 	if (Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat) != 0){
@@ -120,16 +122,16 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
 		Print("Load_User_Program failed\n");
 		return -3;
 	}
+
+	(*pThread) = Start_User_Thread(userContext, true);
 	
-	*pThread = Start_User_Thread(userContext, true);
-	
-	if (*pThread == NULL){
+	if (pThread == NULL){
 		Print("Start_User_Thread failed\n");
 		return -4; 	
 	}
 
    //TODO("Spawn a process by reading an executable from a filesystem");
-   Print("Spawn a process by reading an executable from a filesystem");
+   Print("Spawn a process by reading an executable from a filesystem\n");
    
    /* The kernel thread id; also used as process id */
 	return (*pThread)->pid ;
@@ -152,8 +154,16 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
      * functions.
      */
      
-     KASSERT(kthread!=NULL && state!=NULL);
-     
-    TODO("Switch to a new user address space, if necessary");
+     KASSERT(kthread!=NULL &&  state!=NULL);
+/*    TODO("Switch to a new user address space, if necessary");*/
+         
+    if (kthread->userContext!=NULL){
+		/*Move the stack pointer up one page
+		 * http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/
+		 * */
+		Set_Kernel_Stack_Pointer(((ulong_t)kthread->stackPage) + PAGE_SIZE);   		
+		Switch_To_Address_Space(kthread->userContext);
+   	}
+    
 }
 
