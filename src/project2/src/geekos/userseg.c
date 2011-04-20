@@ -27,6 +27,8 @@
 
 #define DEFAULT_USER_STACK_SIZE 8192
 
+#define LDT_CS  0
+#define LDT_DS  1
 
 /* ----------------------------------------------------------------------
  * Private functions
@@ -41,21 +43,56 @@
 static struct User_Context* Create_User_Context(ulong_t size){
 	
 	struct User_Context *userContext;
+	
 	userContext = (struct User_Context *)Malloc(sizeof(struct User_Context));
+	
 	if(userContext != NULL ){
-		memset(&userContext,0,sizeof(struct User_Context));
+		memset(userContext,0,sizeof(struct User_Context));
 	
 		userContext->memory = (char *)Malloc(sizeof(char)*size);
 		userContext->size = size;
-	}
-	/*
-	-	create an LDT for the process
-	-	add a descriptor to the GDT that describes the location of the LDT
-	-	create a selector that contains the location of the LDT descriptor within the GDT
-	-	create descriptors for the code and data segments of the user program and add these descriptors to the LDT
-	-	create selectors that contain the locations of the two descriptors within the LDT
-	* */
 	
+		/*
+		-	create an LDT for the process
+		-	add a descriptor to the GDT that describes the location of the LDT
+		-	create a selector that contains the location of the LDT descriptor within the GDT
+		-	create descriptors for the code and data segments of the user program and add these descriptors to the LDT
+		-	create selectors that contain the locations of the two descriptors within the LDT
+		
+			project1/src/geekos/lgrog.c ^ virtSize => size virtSpace => memory 
+		 */
+				
+		userContext->ldtDescriptor = Allocate_Segment_Descriptor();
+		Init_LDT_Descriptor(userContext->ldtDescriptor, userContext->ldt, NUM_USER_LDT_ENTRIES);
+		userContext->ldtSelector = Selector( KERNEL_PRIVILEGE, true, Get_Descriptor_Index( userContext->ldtDescriptor ) );
+
+		/* allocate and init descriptors and selectors for code and data 
+			userContext->ldt[LDT_CS]= Allocate_Segment_Descriptor();*/
+
+		/*Code segment and selector*/		
+		Init_Code_Segment_Descriptor(
+					   &userContext->ldt[LDT_CS],
+					   (ulong_t)userContext->memory,	// base address
+					   (size/PAGE_SIZE)+10,	// num pages
+					   USER_PRIVILEGE	// privilege 
+					   );
+
+		/* USER_PRIVILEGE , LDT (no GDT), desc = userContext->ldt[LDT_CS]*/			   
+		userContext->csSelector = Selector( USER_PRIVILEGE, false, (int)&userContext->ldt[LDT_CS] );
+
+		/*Data segment and selector		
+		userContext->ldt[LDT_DS] = Allocate_Segment_Descriptor();*/
+	
+		Init_Data_Segment_Descriptor(
+					   &userContext->ldt[LDT_DS],
+					   (ulong_t)userContext->memory,	// base address
+					   (size/PAGE_SIZE)+10,	// num pages
+					   USER_PRIVILEGE		// privilege 
+					   );
+		/* USER_PRIVILEGE , LDT (no GDT), desc = userContext->ldt[LDT_DS]*/			   
+		userContext->dsSelector = Selector( USER_PRIVILEGE, false, (int)&userContext->ldt[LDT_DS] );
+	}
+	KASSERT(userContext!=NULL);
 	return userContext;
 }
 
@@ -90,7 +127,15 @@ void Destroy_User_Context(struct User_Context* userContext)
      * - don't forget to free the segment descriptor allocated
      *   for the process's LDT
      */
-    TODO("Destroy a User_Context");
+
+	/*TODO("Destroy a User_Context");*/
+
+	Free_Segment_Descriptor(userContext->ldtDescriptor);
+	Free(userContext->memory);
+	Free(userContext);
+
+	userContext = NULL;
+	
 }
 
 /*
@@ -129,11 +174,12 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
      *   address
      */
 
-	unsigned long virtSize;
+	unsigned long virtSize = 0;
 	unsigned int numArgs = 0;
 	ulong_t argBlockSize = 0;
 	int i=0;
 	ulong_t maxva = 0;	/*maximun virtual addres*/
+	struct Argument_Block *argBlock=NULL;
 	
 	/* Find maximum virtual address - scan Exec_Format*/
 	for (i = 0; i < exeFormat->numSegments; ++i) {
@@ -173,19 +219,28 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
 		 * Esta adentro del segmento asi que es parte de la memoria que tiene 
 		 * el proceso.	
 		 * */
-		Format_Argument_Block( (char *) (*pUserContext)->memory+maxva ,numArgs, maxva , command);
-	
+
+		argBlock = Malloc (sizeof (struct Argument_Block));	
+		Format_Argument_Block((char *)argBlock , numArgs, (ulong_t) argBlock , command);
+		memcpy( (*pUserContext)->memory + maxva, argBlock, argBlockSize);
+		
+		Free(argBlock);
+		argBlock = (struct Argument_Block *)(*pUserContext)->memory+maxva;
+		KASSERT(argBlock->argv[0] != NULL);
+		
+		/*(ulong_t) (*pUserContext)->memory + maxva;*/
 		/*entradas en el TAD que faltan completar*/	
 		(*pUserContext)->entryAddr =  exeFormat->entryAddr;
-		(*pUserContext)->argBlockAddr = (ulong_t) (*pUserContext)->memory + maxva;
+		(*pUserContext)->argBlockAddr = (ulong_t)  (*pUserContext)->memory + maxva;
 		(*pUserContext)->stackPointerAddr = (ulong_t) (*pUserContext)->memory + maxva + argBlockSize;
 
 		/* idea: armar algo como: |cs|ds|argBlock|stack...| */
-	} 
-	
-	/*TODO("Load a user executable into a user memory space using segmentation");*/
-	Print("Load a user executable into a user memory space using segmentation");
 
+	}else{
+		return -1;
+	} 
+	/*TODO("Load a user executable into a user memory space using segmentation");*/
+	Print("Load a user executable into a user memory space using segmentation\n");
 	return 0;
 }
 
@@ -248,6 +303,14 @@ void Switch_To_Address_Space(struct User_Context *userContext)
      * Hint: you will need to use the lldt assembly language instruction
      * to load the process's LDT by specifying its LDT selector.
      */
-    TODO("Switch to user address space using segmentation/LDT");
+     
+	__asm__ __volatile__ ("lldt %0"
+							:
+							: "a" (userContext->ldtSelector)
+						 );
+    
+    //TODO("Switch to user address space using segmentation/LDT");
+   Print("Switch to user address space using segmentation/LDT\n");
+    
 }
 
