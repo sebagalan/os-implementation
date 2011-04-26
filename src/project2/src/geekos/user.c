@@ -18,6 +18,12 @@
 #include <geekos/tss.h>
 #include <geekos/user.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(ftm,...) do{ Print(ftm, ## __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(ftm, ...) do{ } while ( false )
+#endif
+
 /*
  * This module contains common functions for implementation of user
  * mode processes.
@@ -83,9 +89,10 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
  *   should return ENOTFOUND if the reason for failure is that
  *   the executable file doesn't exist.
  */
-int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
+ 
+ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
 {
-    /*
+  /*
      * Hints:
      * - Call Read_Fully() to load the entire executable into a memory buffer
      * - Call Parse_ELF_Executable() to verify that the executable is
@@ -105,37 +112,37 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
 	ulong_t exeFileLength;
 	struct Exe_Format exeFormat;
 	struct User_Context *userContext = NULL;
-	int rc= 0;
+	int result = 0;
 	
-	rc = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
-	if (rc != 0){
+	result = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+	if (result != 0){
 		Print("Read_Fully failed to read %s from disk\n", program);
-		return rc;
+		return result;
 	}
 
 	if (Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat) != 0){
 		Print("Parse_ELF_Executable failed\n");
-		return -2;
+		return -1;
 	}
 
 	if(Load_User_Program(exeFileData, exeFileLength, &exeFormat, command, &userContext) != 0){
 		Print("Load_User_Program failed\n");
-		return -3;
+		return -1;
 	}
 
 	(*pThread) = Start_User_Thread(userContext, true);
 	
 	if (pThread == NULL){
 		Print("Start_User_Thread failed\n");
-		return -4; 	
-	}
-
-   //TODO("Spawn a process by reading an executable from a filesystem");
-   Print("Spawn a process by reading an executable from a filesystem\n");
+		return -1; 	
+	}else{
+		DEBUG_PRINT("Spawn: pid = %i\n",(*pThread)->pid);
+	}	
    
-   /* The kernel thread id; also used as process id */
-	return (*pThread)->pid ;
+	/* The kernel thread id; also used as process id */
+	return result;
 }
+
 
 /*
  * If the given thread has a User_Context,
@@ -146,24 +153,25 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
  *   state - saved processor registers describing the state when
  *      the thread was interrupted
  */
+
 void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
 {
-    /*
-     * Hint: Before executing in user mode, you will need to call
-     * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
-     * functions.
-     */
-     
-     KASSERT(kthread!=NULL &&  state!=NULL);
-/*    TODO("Switch to a new user address space, if necessary");*/
-         
-    if (kthread->userContext!=NULL){
+	/*
+	* Hint: Before executing in user mode, you will need to call
+	* the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
+	* functions.
+	*/
+	 
+	KASSERT(kthread!=NULL &&  state!=NULL);
+		
+	if (kthread->userContext!=NULL){
 		/*Move the stack pointer up one page
 		 * http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/
 		 * */
 		Set_Kernel_Stack_Pointer(((ulong_t)kthread->stackPage) + PAGE_SIZE);   		
 		Switch_To_Address_Space(kthread->userContext);
-   	}
-    
+		DEBUG_PRINT("Switch_To_User_Context: kthread = %i\tuserContext = %p\n",
+				kthread->pid,kthread->userContext);
+	}
 }
 

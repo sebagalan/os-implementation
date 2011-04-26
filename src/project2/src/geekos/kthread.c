@@ -19,6 +19,12 @@
 
 #include <geekos/user.h>
 
+#ifdef DEBUG
+#define DEBUG_PRINT(ftm,...) do{ Print(ftm, ## __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(ftm, ...) do{ } while ( false )
+#endif
+
 /* ----------------------------------------------------------------------
  * Private data
  * ---------------------------------------------------------------------- */
@@ -345,12 +351,10 @@ static void Setup_Kernel_Thread(
      
 	Push(kthread,userContext->dsSelector);
 	Push(kthread,userContext->stackPointerAddr);
-	/* EFLAGS - aca no se - ver Setup_Kernel_Thread
-	 * http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/#ldtgdt
-	 * */
-	Push(kthread, 0UL);  
+	Push(kthread,0UL);  
 	Push(kthread,userContext->csSelector);
 	Push(kthread,userContext->entryAddr);
+
 	Push(kthread,0); /*	Error Code (0)*/
 	Push(kthread,0); /*	Interrupt Number (0) */
 	Push(kthread,0); /*	EAX (0)*/
@@ -365,9 +369,9 @@ static void Setup_Kernel_Thread(
 	Push(kthread,userContext->dsSelector); /* FS (data selector) */
 	Push(kthread,userContext->dsSelector); /* GS (data selector) */
 
-//    TODO("Create a new thread to execute in user mode");
-	Print("Create a new thread to execute in user mode\n");
-
+	/*TODO("Create a new thread to execute in user mode");*/
+	DEBUG_PRINT("Create a new thread to execute in user mode\n");
+	
 }
 
 
@@ -577,7 +581,8 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
 		Make_Runnable_Atomic(kthread);
 	}
 
-	Print("Start user thread\n");
+	DEBUG_PRINT("Start_User_Thread: %p\t userContext = %p\n",
+				kthread,kthread->userContext);
 
     return kthread;
 }

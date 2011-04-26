@@ -178,7 +178,7 @@ GENERRS := $(PERL) $(PROJECT_ROOT)/scripts/generrs
 # ----------------------------------------------------------------------
 
 # Flags used for all C source files
-GENERAL_OPTS := -O -Wall $(EXTRA_C_OPTS)
+GENERAL_OPTS := -O -Wall $(EXTRA_C_OPTS) -DDEBUG
 CC_GENERAL_OPTS := $(GENERAL_OPTS) -Werror
 
 # Flags used for kernel C source files
