@@ -21,6 +21,13 @@
 #include <geekos/timer.h>
 #include <geekos/vfs.h>
 
+
+#ifdef DEBUG
+#define DEBUG_PRINT(ftm,...) do{ Print(ftm, ## __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(ftm, ...) do{ } while ( false )
+#endif
+
 /*
  * Null system call.
  * Does nothing except immediately return control back
@@ -33,7 +40,8 @@
  */
 static int Sys_Null(struct Interrupt_State* state)
 {
-    return 0;
+	Print("Call Null syscall\n");
+	return 0;
 }
 
 /*
@@ -46,8 +54,16 @@ static int Sys_Null(struct Interrupt_State* state)
  */
 static int Sys_Exit(struct Interrupt_State* state)
 {
-    TODO("Exit system call");
-    return 0;
+	/* sti */
+	Enable_Interrupts();
+	DEBUG_PRINT("Sys_Exit");
+	if(g_currentThread->userContext){
+		Detach_User_Context(g_currentThread);
+	}
+	/* cli */
+	Disable_Interrupts();	
+	Exit(state->ebx);
+	return 0;
 }
 
 /*
@@ -59,8 +75,25 @@ static int Sys_Exit(struct Interrupt_State* state)
  */
 static int Sys_PrintString(struct Interrupt_State* state)
 {
-    TODO("PrintString system call");
-    return 0;
+  /*  TODO("PrintString system call");*/
+    int result = 0;
+    char *the_string = NULL;
+    unsigned int the_sting_length = (sizeof(char)*state->ecx)+1;
+
+    if(state->ecx < 1024){
+		the_string = (char*)Malloc(the_sting_length);
+		memset(the_string,'\0',the_sting_length);	
+		KASSERT(the_string != NULL);
+		if ( Copy_From_User(the_string,state->ebx,state->ecx) ){
+			Put_Buf(the_string,state->ecx);	
+		}else{
+			result = -1;
+		}
+		Free(the_string);
+	}else{
+		result = -1;
+	}
+	return result; 
 }
 
 /*
@@ -72,8 +105,8 @@ static int Sys_PrintString(struct Interrupt_State* state)
  */
 static int Sys_GetKey(struct Interrupt_State* state)
 {
-    TODO("GetKey system call");
-    return 0;
+    /*TODO("GetKey system call");*/
+    return Wait_For_Key(); 
 }
 
 /*
@@ -84,7 +117,8 @@ static int Sys_GetKey(struct Interrupt_State* state)
  */
 static int Sys_SetAttr(struct Interrupt_State* state)
 {
-    TODO("SetAttr system call");
+    /*TODO("SetAttr system call");*/
+    Set_Current_Attr(state->ebx);
     return 0;
 }
 
@@ -97,7 +131,18 @@ static int Sys_SetAttr(struct Interrupt_State* state)
  */
 static int Sys_GetCursor(struct Interrupt_State* state)
 {
-    TODO("GetCursor system call");
+    /*TODO("GetCursor system call");*/
+    int row = 0, col = 0;
+    
+    Get_Cursor(&row,&col);
+    if (row < 0 || row >= NUMROWS || col < 0 || col >= NUMCOLS){
+		return -1;
+	}
+	
+	if( !(Copy_To_User(state->ebx, &row,sizeof(int)) && Copy_To_User(state->ecx, &col,sizeof(int))) ){
+		return -1;
+	}		
+	
     return 0;
 }
 
@@ -110,8 +155,11 @@ static int Sys_GetCursor(struct Interrupt_State* state)
  */
 static int Sys_PutCursor(struct Interrupt_State* state)
 {
-    TODO("PutCursor system call");
-    return 0;
+   /* TODO("PutCursor system call");*/
+	if(!Put_Cursor(state->ebx,state->ecx)){
+		return -1;
+	}
+	return 0;
 }
 
 /*
@@ -125,8 +173,42 @@ static int Sys_PutCursor(struct Interrupt_State* state)
  */
 static int Sys_Spawn(struct Interrupt_State* state)
 {
-    TODO("Spawn system call");
-    return 0;
+   /* TODO("Spawn system call");*/
+    
+    int pid = 0;
+    char *program = NULL;
+    char *command = NULL;
+    unsigned int command_length = 0, program_length = 0;
+    struct Kernel_Thread *pThread = NULL;
+    
+	if (state->ecx < VFS_MAX_PATH_LEN){
+
+		program_length = (sizeof(char)*state->ecx)+1;
+		command_length = (sizeof(char)*state->esi)+1;
+
+		program = (char *)Malloc(program_length);
+		memset(program,'\0',program_length);
+	  
+		command = (char *)Malloc(command_length);
+		memset(command,'\0',command_length);
+		
+		if( Copy_From_User(program,state->ebx,program_length)	&&
+			Copy_From_User(command,state->edx,command_length)){
+				DEBUG_PRINT("program = %s\ncommand = %s\n",program,command);
+				Enable_Interrupts();	/*  sti	*/
+				pid = Spawn(program,command,&pThread);
+				Disable_Interrupts();	/*	cli	*/	
+		}else{
+			pid = -1;
+		}	
+		Free(program);
+		Free(command);
+	}else{
+		pid = -1;
+	}
+
+
+   return pid;
 }
 
 /*
@@ -138,8 +220,24 @@ static int Sys_Spawn(struct Interrupt_State* state)
  */
 static int Sys_Wait(struct Interrupt_State* state)
 {
-    TODO("Wait system call");
-    return 0;
+
+/*    TODO("Wait system call");*/
+	int exitCode = 0;
+	struct Kernel_Thread *result  = NULL;
+
+	result = Lookup_Thread(state->ebx);
+	if (result != NULL &&  result->owner == g_currentThread){
+
+		/* sti */
+		Enable_Interrupts();
+		exitCode = Join(result);
+		/* cli */
+		Disable_Interrupts();	
+	}else{
+		exitCode = -1;
+	}
+	
+	return exitCode;
 }
 
 /*
@@ -150,8 +248,8 @@ static int Sys_Wait(struct Interrupt_State* state)
  */
 static int Sys_GetPID(struct Interrupt_State* state)
 {
-    TODO("GetPID system call");
-    return 0;
+    /*TODO("GetPID system call");*/
+    return g_currentThread->pid;
 }
 
 

@@ -18,5 +18,5 @@ int main(int argc, char **argv)
 	: "a" (badsys)
     );
 
-    return 0;
+    return 1;
 }

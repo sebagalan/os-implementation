@@ -6,9 +6,9 @@
 
 int main(int argc, char** argv)
 {
+ 
   Null();
-
-  for(;;);
-
+ for(;;);
+	
   return 0;
 }

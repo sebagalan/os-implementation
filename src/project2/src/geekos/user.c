@@ -69,7 +69,7 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
 	refCount = old->refCount;
 	Enable_Interrupts();
 
-	/*Print("User context refcount == %d\n", refCount);*/
+	DEBUG_PRINT("User context refcount == %d\n", refCount);
         if (refCount == 0)
             Destroy_User_Context(old);
     }
@@ -116,30 +116,35 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
 	
 	result = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
 	if (result != 0){
-		Print("Read_Fully failed to read %s from disk\n", program);
+		DEBUG_PRINT("Read_Fully failed to read %s from disk\n", program);
 		return result;
 	}
 
 	if (Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat) != 0){
-		Print("Parse_ELF_Executable failed\n");
+		DEBUG_PRINT("Parse_ELF_Executable failed\n");
+		Free(exeFileData);
 		return -1;
 	}
 
 	if(Load_User_Program(exeFileData, exeFileLength, &exeFormat, command, &userContext) != 0){
-		Print("Load_User_Program failed\n");
+		DEBUG_PRINT("Load_User_Program failed\n");
+		Free(exeFileData);
 		return -1;
 	}
+
+	/* The kernel thread id; also used as process id */
 
 	(*pThread) = Start_User_Thread(userContext, true);
 	
 	if (pThread == NULL){
-		Print("Start_User_Thread failed\n");
+		DEBUG_PRINT("Start_User_Thread failed\n");
+		Free(exeFileData);
+		Free(userContext);
 		return -1; 	
 	}else{
 		DEBUG_PRINT("Spawn: pid = %i\n",(*pThread)->pid);
 	}	
-   
-	/* The kernel thread id; also used as process id */
+	Free(exeFileData);
 	return result;
 }
 
@@ -170,8 +175,8 @@ void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_Stat
 		 * */
 		Set_Kernel_Stack_Pointer(((ulong_t)kthread->stackPage) + PAGE_SIZE);   		
 		Switch_To_Address_Space(kthread->userContext);
-		DEBUG_PRINT("Switch_To_User_Context: kthread = %i\tuserContext = %p\n",
-				kthread->pid,kthread->userContext);
+		/*DEBUG_PRINT("Switch_To_User_Context: kthread = %i\tuserContext = %p\n",
+				kthread->pid,kthread->userContext);*/
 	}
 }
 

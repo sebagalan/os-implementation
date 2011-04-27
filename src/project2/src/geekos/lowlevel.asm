@@ -79,7 +79,7 @@ REG_SKIP equ (11*4)
 ; an explicit processor-generated error code.
 ; The argument is the interrupt number.
 %macro Int_With_Err 1
-align 8
+align 16
 	push	dword %1	; push interrupt number
 	jmp	Handle_Interrupt ; jump to common handler
 %endmacro
@@ -89,7 +89,7 @@ align 8
 ; code on the stack, so the stack layout is the same
 ; for all interrupts.
 %macro Int_No_Err 1
-align 8
+align 16
 	push	dword 0		; fake error code
 	push	dword %1	; push interrupt number
 	jmp	Handle_Interrupt ; jump to common handler
@@ -335,7 +335,7 @@ Get_Current_EFLAGS:
 ; We also define symbols to indicate the extend of the table
 ; of entry points, and the size of individual entry points.
 ; ----------------------------------------------------------------------
-align 8
+align 16
 g_entryPointTableStart:
 
 ; Handlers for processor-generated exceptions, as defined by
@@ -355,7 +355,7 @@ Int_No_Err 7
 align 8
 Before_Err:
 Int_With_Err 8
-align 8
+align 16
 After_Err:
 Int_No_Err 9	; FIXME: not described in 486 manual
 Int_With_Err 10

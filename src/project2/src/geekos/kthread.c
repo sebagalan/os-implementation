@@ -115,7 +115,7 @@ static void Init_Thread(struct Kernel_Thread* kthread, void* stackPage,
  */
 static struct Kernel_Thread* Create_Thread(int priority, bool detached)
 {
-    struct Kernel_Thread* kthread;
+    struct Kernel_Thread* kthread = NULL;
     void* stackPage = 0;
 
     /*
@@ -134,7 +134,8 @@ static struct Kernel_Thread* Create_Thread(int priority, bool detached)
 	return 0;
     }
 
-    /*Print("New thread @ %x, stack @ %x\n", kthread, stackPage); */
+    DEBUG_PRINT("New thread @ %x, stack @ %x\n", 
+		(unsigned int )kthread, (unsigned int )stackPage); 
 
     /*
      * Initialize the stack pointer of the new thread
@@ -420,6 +421,9 @@ static void Reaper(ulong_t arg)
 		Print("Reaper: disposing of thread @ %x, stack @ %x\n",
 		    kthread, kthread->stackPage);
 #endif
+		DEBUG_PRINT("Reaper: disposing of thread @ %x, stack @ %x\n",
+			(unsigned int)kthread, (unsigned int)kthread->stackPage);
+
 		Destroy_Thread(kthread);
 		kthread = next;
 	    }
@@ -582,7 +586,7 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
 	}
 
 	DEBUG_PRINT("Start_User_Thread: %p\t userContext = %p\n",
-				kthread,kthread->userContext);
+			kthread,kthread->userContext);
 
     return kthread;
 }
@@ -685,6 +689,11 @@ void Exit(int exitCode)
 {
     struct Kernel_Thread* current = g_currentThread;
 
+	#ifdef DEBUG
+		DEBUG_PRINT("Exit!\n");
+		Dump_All_Thread_List();
+	#endif
+	
     if (Interrupts_Enabled())
 	Disable_Interrupts();
 

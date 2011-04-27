@@ -48,52 +48,68 @@
 
 /* TODO: Implement*/
 static struct User_Context* Create_User_Context(ulong_t size){
+	
+	/*
+	-	create an LDT for the process
+	-	add a descriptor to the GDT that describes the location of the LDT
+	-	create a selector that contains the location of the LDT descriptor within the GDT
+	-	create descriptors for the code and data segments of the user program and add these descriptors to the LDT
+	-	create selectors that contain the locations of the two descriptors within the LDT
+	-	project1/src/geekos/lgrog.c
+	 */
+
 
 	struct User_Context *userContext = NULL;
 
 	userContext = (struct User_Context *)Malloc(sizeof(struct User_Context));
+	KASSERT(userContext!=NULL);
 	if(userContext != NULL ){
+		
 		memset(userContext,0,sizeof(struct User_Context));
 		userContext->memory = (char *)Malloc(size);
+		KASSERT(userContext->memory!=NULL);
 		
-		userContext->size = size;
-		/*
-		-	create an LDT for the process
-		-	add a descriptor to the GDT that describes the location of the LDT
-		-	create a selector that contains the location of the LDT descriptor within the GDT
-		-	create descriptors for the code and data segments of the user program and add these descriptors to the LDT
-		-	create selectors that contain the locations of the two descriptors within the LDT
-		-	project1/src/geekos/lgrog.c
-		 */
-				
-		userContext->ldtDescriptor = Allocate_Segment_Descriptor();
+		if(userContext->memory != NULL){
 		
-		Init_LDT_Descriptor(userContext->ldtDescriptor,
-					userContext->ldt, NUM_USER_LDT_ENTRIES);
-		
-		KASSERT(userContext->ldtDescriptor!=NULL);			
-		userContext->ldtSelector = Selector( KERNEL_PRIVILEGE, true, 
-					Get_Descriptor_Index(userContext->ldtDescriptor));
-		
-
-		/*descriptors and selectors for code and data*/
-
-		/*Code segment and selector*/
-		
-		Init_Code_Segment_Descriptor(&userContext->ldt[LDT_CS],
-					   (ulong_t)userContext->memory, /* base address*/
-					   (size/PAGE_SIZE)+10,	/* num pages*/
-					   USER_PRIVILEGE	/* privilege */
-					   );
-		userContext->csSelector = Selector(USER_PRIVILEGE,false,LDT_CS);
-
-		/*Data segment and selector*/
-		Init_Data_Segment_Descriptor(&userContext->ldt[LDT_DS],
-					   (ulong_t)userContext->memory,(size/PAGE_SIZE)+10,
-					   USER_PRIVILEGE);
+			userContext->size = size;
+			memset(userContext->memory,0,size);
 	
-		userContext->dsSelector = Selector(USER_PRIVILEGE,false,LDT_DS);
-	    userContext->refCount = 0; 
+			userContext->ldtDescriptor = Allocate_Segment_Descriptor();
+					
+			if(userContext->ldtDescriptor != NULL){
+		
+				Init_LDT_Descriptor(userContext->ldtDescriptor,
+						userContext->ldt, NUM_USER_LDT_ENTRIES);
+
+				userContext->ldtSelector = Selector( KERNEL_PRIVILEGE, true, 
+						Get_Descriptor_Index(userContext->ldtDescriptor));
+				/*descriptors and selectors for code and data*/
+				/*Code segment and selector*/
+		
+				Init_Code_Segment_Descriptor(&userContext->ldt[LDT_CS],
+							   (ulong_t)userContext->memory, /* base address*/
+							   (size/PAGE_SIZE)+10,	/* num pages*/
+							   USER_PRIVILEGE	/* privilege */
+							   );
+				userContext->csSelector = Selector(USER_PRIVILEGE,false,LDT_CS);
+
+				/*Data segment and selector*/
+				Init_Data_Segment_Descriptor(&userContext->ldt[LDT_DS],
+							   (ulong_t)userContext->memory,(size/PAGE_SIZE)+10,
+							   USER_PRIVILEGE);
+			
+				userContext->dsSelector = Selector(USER_PRIVILEGE,false,LDT_DS);
+				userContext->refCount = 0; 
+			}else{
+				Free(userContext->memory);
+				Free(userContext);
+				userContext = NULL;
+				KASSERT(userContext->ldtDescriptor!=NULL);			
+			}
+		}else{
+			Free(userContext);
+			userContext = NULL;
+		}
 	}
 
 	return userContext;
@@ -283,11 +299,12 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
 		if (mem_valid){
 				memcpy(destInKernel,g_currentThread->userContext->memory+srcInUser,bufSize);
 		}
-		DEBUG_PRINT("Copy_From_User: bufSize = %i\n \
-					useraddr = %p\n,kerneladdr = %p\n",
+		
+		/*DEBUG_PRINT("Copy_From_User: bufSize = %i\n \
+					useraddr = %p\nkerneladdr = %p\n",
 					(int)bufSize,
 					g_currentThread->userContext->memory+srcInUser,
-					destInKernel);
+					destInKernel);*/
 	}				
 	return mem_valid; 
 }
@@ -316,11 +333,11 @@ bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
 			memcpy(g_currentThread->userContext->memory+destInUser,srcInKernel,bufSize);
 		}
 
-		DEBUG_PRINT("Copy_From_User: bufSize = %i\n \
+		/*DEBUG_PRINT("Copy_To_User: bufSize = %i\n \
 					useraddr = %p\n,kerneladdr = %p\n",
 					(int)bufSize,
 					g_currentThread->userContext->memory+destInUser,
-					srcInKernel);
+					srcInKernel);*/
 	}		
 	return mem_valid;
 }

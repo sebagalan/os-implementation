@@ -47,9 +47,9 @@ static int s_numAllocated = 0;
  */
 struct Segment_Descriptor* Allocate_Segment_Descriptor(void)
 {
-    struct Segment_Descriptor* result = 0;
-    int i;
-    bool iflag;
+    struct Segment_Descriptor *result = 0;
+    int i = 0;
+    bool iflag = false;
 
     iflag = Begin_Int_Atomic();
 
