@@ -101,7 +101,7 @@ GENERATED_LIBC_SRCS := libc/errno.c
 # User program source files.
 USER_C_SRCS := \
 	null.c long.c \
-	shell.c b.c c.c
+	shell.c b.c c.c sbo.c so.c
 # User executables
 USER_PROGS := $(USER_C_SRCS:%.c=user/%.exe)
 

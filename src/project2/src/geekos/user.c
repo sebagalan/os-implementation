@@ -143,6 +143,7 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
 		return -1; 	
 	}else{
 		DEBUG_PRINT("Spawn: pid = %i\n",(*pThread)->pid);
+		result = (*pThread)->pid;
 	}	
 	Free(exeFileData);
 	return result;
