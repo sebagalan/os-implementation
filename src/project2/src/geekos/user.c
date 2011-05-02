@@ -36,6 +36,7 @@
 void Attach_User_Context(struct Kernel_Thread* kthread, struct User_Context* context)
 {
     KASSERT(context != 0);
+    KASSERT(kthread != 0);
     kthread->userContext = context;
 
     Disable_Interrupts();
@@ -57,19 +58,21 @@ void Attach_User_Context(struct Kernel_Thread* kthread, struct User_Context* con
  */
 void Detach_User_Context(struct Kernel_Thread* kthread)
 {
+    KASSERT(kthread != 0);
+
     struct User_Context* old = kthread->userContext;
 
     kthread->userContext = 0;
 
     if (old != 0) {
-	int refCount;
+    int refCount;
 
-	Disable_Interrupts();
+    Disable_Interrupts();
         --old->refCount;
-	refCount = old->refCount;
-	Enable_Interrupts();
+    refCount = old->refCount;
+    Enable_Interrupts();
 
-	DEBUG_PRINT("User context refcount == %d\n", refCount);
+    DEBUG_PRINT("User context refcount == %d\n", refCount);
         if (refCount == 0)
             Destroy_User_Context(old);
     }
@@ -92,7 +95,9 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
  
  int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
 {
-  /*
+    KASSERT(program != 0);
+    KASSERT(command != 0);
+    /*
      * Hints:
      * - Call Read_Fully() to load the entire executable into a memory buffer
      * - Call Parse_ELF_Executable() to verify that the executable is
@@ -106,6 +111,7 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
      * pThread and return 0.  Otherwise, return an error code.
      */
     /* Por Victor Rosales */
+
     char *exeFileData = 0;
     ulong_t exeFileLength = 0;
     struct Exe_Format exeFormat;
@@ -159,11 +165,12 @@ error:
  * Params:
  *   kthread - the thread that is about to execute
  *   state - saved processor registers describing the state when
- *      the thread was interrupted
+ *   the thread was interrupted
  */
 
 void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
 {
+    KASSERT(kthread != 0);
     /*
      * Hint: Before executing in user mode, you will need to call
      * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
