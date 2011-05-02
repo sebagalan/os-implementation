@@ -93,10 +93,8 @@ static void Mount_Root_Filesystem(void)
 	Print("Mounted /" ROOT_PREFIX " filesystem!\n");
 }
 
-static void Spawn_Init_Process(void){
-
-   /* TODO("Spawn the init process");*/
-    struct Kernel_Thread *pThread = NULL;
-    Spawn(INIT_PROGRAM,INIT_PROGRAM,&pThread);	
-	
+static void Spawn_Init_Process(void)
+{
+    struct Kernel_Thread *userThread = NULL;
+    Spawn(INIT_PROGRAM, INIT_PROGRAM, &userThread);
 }

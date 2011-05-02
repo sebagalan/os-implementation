@@ -104,49 +104,51 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
      *
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
-     *
-     * 
-     * lo mismo que lprog.c en project1? seguramente cambia algo...*/
-    
-	char *exeFileData = 0;
-	ulong_t exeFileLength;
-	struct Exe_Format exeFormat;
-	struct User_Context *userContext = NULL;
-	int result = 0;
-	
-	result = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
-	if (result != 0){
-		DEBUG_PRINT("Read_Fully failed to read %s from disk\n", program);
-		return result;
-	}
+     */
+    /* Por Victor Rosales */
+    char *exeFileData = 0;
+    ulong_t exeFileLength = 0;
+    struct Exe_Format exeFormat;
+    struct User_Context *userContext = NULL;
+    struct Kernel_Thread *process = NULL;
+    int ret = 0;
 
-	if (Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat) != 0){
-		DEBUG_PRINT("Parse_ELF_Executable failed\n");
-		Free(exeFileData);
-		return -1;
-	}
+    ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+    if (ret != 0) {
+        ret = ENOTFOUND;
+        goto error;
+    }
 
-	if(Load_User_Program(exeFileData, exeFileLength, &exeFormat, command, &userContext) != 0){
-		DEBUG_PRINT("Load_User_Program failed\n");
-		Free(exeFileData);
-		return -1;
-	}
+    ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+    if (ret != 0) {
+        ret = ENOEXEC;
+        goto error;
+    }
 
-	/* The kernel thread id; also used as process id */
+    ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat,
+                            command, &userContext);
+    if (ret != 0) {
+        ret = -1;
+        goto error;
+    }
 
-	(*pThread) = Start_User_Thread(userContext, true);
-	
-	if (pThread == NULL){
-		DEBUG_PRINT("Start_User_Thread failed\n");
-		Free(exeFileData);
-		Free(userContext);
-		return -1; 	
-	}else{
-		DEBUG_PRINT("Spawn: pid = %i\n",(*pThread)->pid);
-		result = (*pThread)->pid;
-	}	
-	Free(exeFileData);
-	return result;
+    process = Start_User_Thread(userContext, false);
+    if (process == NULL) {
+        ret = -1;
+        goto error;
+    }
+
+    *pThread = process;
+
+    ret =(*pThread)->pid;
+
+error:
+    if (exeFileData)
+        Free(exeFileData);
+
+    exeFileData = 0;
+ 
+    return ret;
 }
 
 
@@ -162,22 +164,14 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
 
 void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
 {
-	/*
-	* Hint: Before executing in user mode, you will need to call
-	* the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
-	* functions.
-	*/
-	 
-	KASSERT(kthread!=NULL &&  state!=NULL);
-		
-	if (kthread->userContext!=NULL){
-		/*Move the stack pointer up one page
-		 * http://www.cs.umd.edu/class/spring2005/cmsc412/proj2/
-		 * */
-		Set_Kernel_Stack_Pointer(((ulong_t)kthread->stackPage) + PAGE_SIZE);   		
-		Switch_To_Address_Space(kthread->userContext);
-		/*DEBUG_PRINT("Switch_To_User_Context: kthread = %i\tuserContext = %p\n",
-				kthread->pid,kthread->userContext);*/
-	}
+    /*
+     * Hint: Before executing in user mode, you will need to call
+     * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
+     * functions.
+     */
+    if (kthread->userContext != NULL) {
+        Switch_To_Address_Space(kthread->userContext );
+        Set_Kernel_Stack_Pointer(((ulong_t) kthread->stackPage) + PAGE_SIZE);
+    }
 }
 

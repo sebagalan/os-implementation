@@ -40,8 +40,8 @@
  */
 static int Sys_Null(struct Interrupt_State* state)
 {
-	Print("Call Null syscall\n");
-	return 0;
+    Print("Sys_Null was called.\n");
+    return 0;
 }
 
 /*
@@ -80,20 +80,20 @@ static int Sys_PrintString(struct Interrupt_State* state)
     char *the_string = NULL;
     unsigned int the_sting_length = (sizeof(char)*state->ecx)+1;
 
-    if(state->ecx < 1024){
-		the_string = (char*)Malloc(the_sting_length);
-		memset(the_string,'\0',the_sting_length);	
-		KASSERT(the_string != NULL);
-		if ( Copy_From_User(the_string,state->ebx,state->ecx) ){
-			Put_Buf(the_string,state->ecx);	
-		}else{
-			result = -1;
-		}
-		Free(the_string);
-	}else{
-		result = -1;
-	}
-	return result; 
+    if(state->ecx < 1024) {
+        the_string = (char*)Malloc(the_sting_length);
+        memset(the_string,'\0',the_sting_length);
+        KASSERT(the_string != NULL);
+        if ( Copy_From_User(the_string,state->ebx,state->ecx) ){
+            Put_Buf(the_string,state->ecx);
+        }else{
+            result = -1;
+        }
+        Free(the_string);
+    } else {
+        result = -1;
+    }
+    return result; 
 }
 
 /*
@@ -135,14 +135,14 @@ static int Sys_GetCursor(struct Interrupt_State* state)
     int row = 0, col = 0;
     
     Get_Cursor(&row,&col);
-    if (row < 0 || row >= NUMROWS || col < 0 || col >= NUMCOLS){
-		return -1;
-	}
-	
-	if( !(Copy_To_User(state->ebx, &row,sizeof(int)) && Copy_To_User(state->ecx, &col,sizeof(int))) ){
-		return -1;
-	}		
-	
+    if (row < 0 || row >= NUMROWS || col < 0 || col >= NUMCOLS) {
+        return -1;
+    }
+
+    if( !(Copy_To_User(state->ebx, &row,sizeof(int)) && Copy_To_User(state->ecx, &col,sizeof(int))) ) {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -156,10 +156,10 @@ static int Sys_GetCursor(struct Interrupt_State* state)
 static int Sys_PutCursor(struct Interrupt_State* state)
 {
    /* TODO("PutCursor system call");*/
-	if(!Put_Cursor(state->ebx,state->ecx)){
-		return -1;
-	}
-	return 0;
+    if(!Put_Cursor(state->ebx,state->ecx)){
+        return -1;
+    }
+    return 0;
 }
 
 /*
@@ -181,32 +181,31 @@ static int Sys_Spawn(struct Interrupt_State* state)
     unsigned int command_length = 0, program_length = 0;
     struct Kernel_Thread *pThread = NULL;
     
-	if (state->ecx < VFS_MAX_PATH_LEN){
+    if (state->ecx < VFS_MAX_PATH_LEN){
 
-		program_length = (sizeof(char)*state->ecx)+1;
-		command_length = (sizeof(char)*state->esi)+1;
+        program_length = (sizeof(char)*state->ecx)+1;
+        command_length = (sizeof(char)*state->esi)+1;
 
-		program = (char *)Malloc(program_length);
-		memset(program,'\0',program_length);
-	  
-		command = (char *)Malloc(command_length);
-		memset(command,'\0',command_length);
-		
-		if( Copy_From_User(program,state->ebx,program_length)	&&
-			Copy_From_User(command,state->edx,command_length)){
-				DEBUG_PRINT("program = %s\ncommand = %s\n",program,command);
-				Enable_Interrupts();	/*  sti	*/
-				pid = Spawn(program,command,&pThread);
-				Disable_Interrupts();	/*	cli	*/	
-		}else{
-			pid = -1;
-		}	
-		Free(program);
-		Free(command);
-	}else{
-		pid = -1;
-	}
-
+        program = (char *)Malloc(program_length);
+        memset(program,'\0',program_length);
+      
+        command = (char *)Malloc(command_length);
+        memset(command,'\0',command_length);
+        
+        if(Copy_From_User(program,state->ebx,program_length) &&
+           Copy_From_User(command,state->edx,command_length)) {
+                DEBUG_PRINT("program = %s\ncommand = %s\n",program,command);
+                Enable_Interrupts();/*sti*/
+                pid = Spawn(program,command,&pThread);
+                Disable_Interrupts();/*cli*/
+        } else {
+            pid = -1;
+        }
+        Free(program);
+        Free(command);
+    }else{
+        pid = -1;
+    }
 
    return pid;
 }
@@ -222,22 +221,21 @@ static int Sys_Wait(struct Interrupt_State* state)
 {
 
 /*    TODO("Wait system call");*/
-	int exitCode = 0;
-	struct Kernel_Thread *result  = NULL;
+    int exitCode = 0;
+    struct Kernel_Thread *result  = NULL;
 
-	result = Lookup_Thread(state->ebx);
-	if (result != NULL &&  result->owner == g_currentThread){
+    result = Lookup_Thread(state->ebx);
+    if (result != NULL &&  result->owner == g_currentThread){
+        /* sti */
+        Enable_Interrupts();
+        exitCode = Join(result);
+        /* cli */
+        Disable_Interrupts();
+    }else{
+        exitCode = -1;
+    }
 
-		/* sti */
-		Enable_Interrupts();
-		exitCode = Join(result);
-		/* cli */
-		Disable_Interrupts();	
-	}else{
-		exitCode = -1;
-	}
-	
-	return exitCode;
+    return exitCode;
 }
 
 /*
