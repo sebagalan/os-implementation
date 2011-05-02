@@ -317,14 +317,15 @@ static void Setup_Kernel_Thread(
      * execute in user mode
      * Hints:
      * - Call Attach_User_Context() to attach the user context
-     *   to the Kernel_Thread 
+     *   to the Kernel_Thread
      * - Set up initial thread stack to make it appear that
      *   the thread was interrupted while in user mode
      *   just before the entry point instruction was executed
      * - The esi register should contain the address of
      *   the argument block
      */
-    KASSERT( kthread != NULL && userContext != NULL); 
+    KASSERT(kthread);
+    KASSERT(userContext); 
 
     Attach_User_Context(kthread, userContext);
 
@@ -562,7 +563,7 @@ struct Kernel_Thread* Start_Kernel_Thread(
 struct Kernel_Thread*
 Start_User_Thread(struct User_Context* userContext, bool detached)
 {
-	KASSERT(userContext != 0);
+	KASSERT(userContext);
     /*
      * Hints:
      * - Use Create_Thread() to create a new "raw" thread object
