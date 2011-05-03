@@ -35,8 +35,8 @@
  */
 void Attach_User_Context(struct Kernel_Thread* kthread, struct User_Context* context)
 {
-    KASSERT(context);
-    KASSERT(kthread);
+    KASSERT(context != NULL);
+    KASSERT(kthread != NULL);
     kthread->userContext = context;
 
     Disable_Interrupts();
@@ -58,7 +58,7 @@ void Attach_User_Context(struct Kernel_Thread* kthread, struct User_Context* con
  */
 void Detach_User_Context(struct Kernel_Thread* kthread)
 {
-    KASSERT(kthread);
+    KASSERT(kthread != NULL);
 
     struct User_Context* old = kthread->userContext;
 
@@ -95,8 +95,8 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
  
  int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
 {
-    KASSERT(program);
-    KASSERT(command);
+    KASSERT(program != NULL);
+    KASSERT(command != NULL); 
     /*
      * Hints:
      * - Call Read_Fully() to load the entire executable into a memory buffer
@@ -170,7 +170,7 @@ error:
 
 void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
 {
-    KASSERT(kthread);
+    KASSERT(kthread != NULL);
     /*
      * Hint: Before executing in user mode, you will need to call
      * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
