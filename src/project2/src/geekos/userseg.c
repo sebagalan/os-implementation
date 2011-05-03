@@ -42,7 +42,6 @@
  * Private functions
  * ---------------------------------------------------------------------- */
 
-
 /*
  * Create a new user context of given size
  */
@@ -89,7 +88,7 @@ static struct User_Context* Create_User_Context(ulong_t size)
     userContext->dsSelector = ds_selector;
     userContext->size = size;
     userContext->memory = mem;
-    userContext->refCount=0;
+    userContext->refCount = 0;
 
     goto success;
 
@@ -130,9 +129,9 @@ static bool Validate_User_Memory(struct User_Context* userContext,
  
 void Destroy_User_Context(struct User_Context* userContext)
 {
-    KASSERT(userContext);
-    KASSERT(userContext->memory);
-    KASSERT(userContext->ldtDescriptor);
+    KASSERT(userContext != NULL);
+    KASSERT(userContext->memory != NULL);
+    KASSERT(userContext->ldtDescriptor != NULL);
 
     /*
      * Hints:
@@ -140,12 +139,9 @@ void Destroy_User_Context(struct User_Context* userContext)
      * - don't forget to free the segment descriptor allocated
      *   for the process's LDT
      */
-
     Free_Segment_Descriptor(userContext->ldtDescriptor);
     Free(userContext->memory);
     Free(userContext);
-    userContext = NULL;
-    DEBUG_PRINT("Destroy a User_Context\n");
 }
 
 /*
@@ -171,9 +167,9 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
     struct Exe_Format *exeFormat, const char *command,
     struct User_Context **pUserContext)
 {
-    KASSERT(exeFileData);
-    KASSERT(command);
-    KASSERT(exeFormat);
+    KASSERT(exeFileData != NULL);
+    KASSERT(command != NULL );
+    KASSERT(exeFormat != NULL );
 
     /*
      * Hints:
@@ -258,8 +254,8 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
  */
 bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
 {
-    KASSERT(destInKernel);
-    KASSERT(srcInUser);
+    KASSERT(destInKernel != NULL);
+    KASSERT(srcInUser != NULL);
     /*
      * Hints: 
      * - the User_Context of the current process can be found
@@ -300,8 +296,8 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
  */
 bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
 {
-    KASSERT(srcInKernel);
-    KASSERT(destInUser);
+    KASSERT(srcInKernel != NULL);
+    KASSERT(destInUser != NULL );
 
     /* Hints: same as for Copy_From_User()*/
     bool mem_valid = false;
@@ -330,8 +326,8 @@ bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
  */
 void Switch_To_Address_Space(struct User_Context *userContext)
 {
-    KASSERT(userContext);
-    KASSERT(userContext->ldtSelector);
+    KASSERT(userContext != NULL);
+    KASSERT(userContext->ldtSelector != NULL);
 
     /*
      * Hint: you will need to use the lldt assembly language instruction
