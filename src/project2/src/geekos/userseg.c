@@ -132,7 +132,6 @@ void Destroy_User_Context(struct User_Context* userContext)
     KASSERT(userContext != NULL);
     KASSERT(userContext->memory != NULL);
     KASSERT(userContext->ldtDescriptor != NULL);
-
     /*
      * Hints:
      * - you need to free the memory allocated for the user process
@@ -168,9 +167,8 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
     struct User_Context **pUserContext)
 {
     KASSERT(exeFileData != NULL);
-    KASSERT(command != NULL );
-    KASSERT(exeFormat != NULL );
-
+    KASSERT(command != NULL);
+    KASSERT(exeFormat != NULL);
     /*
      * Hints:
      * - Determine where in memory each executable segment will be placed
@@ -255,7 +253,7 @@ int Load_User_Program(char *exeFileData, ulong_t exeFileLength,
 bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
 {
     KASSERT(destInKernel != NULL);
-    KASSERT(srcInUser != NULL);
+    KASSERT(srcInUser != 0);
     /*
      * Hints: 
      * - the User_Context of the current process can be found
@@ -268,18 +266,15 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
     bool mem_valid = false;
 
     if (g_currentThread->userContext != NULL) {
-        mem_valid = Validate_User_Memory(g_currentThread->userContext,srcInUser,bufSize);
+        mem_valid = Validate_User_Memory(g_currentThread->userContext,
+                                            srcInUser, bufSize);
         if (mem_valid) {
-                memcpy(destInKernel,g_currentThread->userContext->memory+srcInUser,bufSize);
+                memcpy(destInKernel,
+                        g_currentThread->userContext->memory+srcInUser,
+                        bufSize);
         }
-        
-        /*DEBUG_PRINT("Copy_From_User: bufSize = %i\n \
-                    useraddr = %p\nkerneladdr = %p\n",
-                    (int)bufSize,
-                    g_currentThread->userContext->memory+srcInUser,
-                    destInKernel);*/
     }
-    return mem_valid; 
+    return mem_valid;
 }
 
 /*
@@ -297,23 +292,19 @@ bool Copy_From_User(void* destInKernel, ulong_t srcInUser, ulong_t bufSize)
 bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
 {
     KASSERT(srcInKernel != NULL);
-    KASSERT(destInUser != NULL );
-
-    /* Hints: same as for Copy_From_User()*/
+    KASSERT(destInUser != 0);
+    /*
+     * Hints: same as for Copy_From_User()
+     */
     bool mem_valid = false;
 
     if (g_currentThread->userContext != NULL) {
-        
-        mem_valid = Validate_User_Memory(g_currentThread->userContext,destInUser,bufSize);
+        mem_valid = Validate_User_Memory(g_currentThread->userContext,
+                                            destInUser, bufSize);
         if (mem_valid) {
-            memcpy(g_currentThread->userContext->memory+destInUser,srcInKernel,bufSize);
+            memcpy(g_currentThread->userContext->memory+destInUser, srcInKernel,
+                    bufSize);
         }
-
-        /*DEBUG_PRINT("Copy_To_User: bufSize = %i\n \
-                    useraddr = %p\n,kerneladdr = %p\n",
-                    (int)bufSize,
-                    g_currentThread->userContext->memory+destInUser,
-                    srcInKernel);*/
     }
     return mem_valid;
 }
@@ -327,8 +318,7 @@ bool Copy_To_User(ulong_t destInUser, void* srcInKernel, ulong_t bufSize)
 void Switch_To_Address_Space(struct User_Context *userContext)
 {
     KASSERT(userContext != NULL);
-    KASSERT(userContext->ldtSelector != NULL);
-
+    KASSERT(userContext->ldtSelector != 0);
     /*
      * Hint: you will need to use the lldt assembly language instruction
      * to load the process's LDT by specifying its LDT selector.
