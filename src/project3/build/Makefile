@@ -59,7 +59,7 @@ KERNEL_C_SRCS := idt.c int.c trap.c irq.c io.c \
 	user.c $(USER_IMP_C) argblock.c syscall.c dma.c floppy.c \
 	elf.c blockdev.c ide.c \
 	vfs.c pfat.c bitset.c \
-	main.c
+	main.c sem.c
 
 # Kernel object files built from C source files
 KERNEL_C_OBJS := $(KERNEL_C_SRCS:%.c=geekos/%.o)
@@ -105,7 +105,7 @@ USER_C_SRCS := \
 	semtest1.c semtest2.c p1.c p2.c p3.c \
 	schedtest.c sched1.c sched2.c sched3.c \
 	ping.c pong.c long.c \
-	shell.c b.c c.c
+	shell.c b.c c.c Ping.c Pong.c
 # User executables
 USER_PROGS := $(USER_C_SRCS:%.c=user/%.exe)
 
@@ -182,8 +182,8 @@ GENERRS := $(PERL) $(PROJECT_ROOT)/scripts/generrs
 # ----------------------------------------------------------------------
 
 # Flags used for all C source files
-GENERAL_OPTS := -O -Wall $(EXTRA_C_OPTS)
-CC_GENERAL_OPTS := $(GENERAL_OPTS) -Werror 
+GENERAL_OPTS :=  -Wall $(EXTRA_C_OPTS) 
+CC_GENERAL_OPTS := $(GENERAL_OPTS) -Werror -Wno-unused-but-set-variable 
 
 # Flags used for kernel C source files
 CC_KERNEL_OPTS := -m32 -g -DGEEKOS -I$(PROJECT_ROOT)/include -nostdlib
