@@ -78,14 +78,14 @@ int main(int argc , char ** argv)
   V (scr_sem) ;
 
 
-  id2 = Spawn_Program ("/c/ping.exe", "/c/ping.exe"
+  id2 = Spawn_Program ("/c/Ping.exe", "/c/Ping.exe"
   ) ;
 
   P (scr_sem) ;
   Print ("Process Ping has been created with ID = %d\n",id2);
   V (scr_sem) ;
 
-  id3 = Spawn_Program ("/c/pong.exe", "/c/pong.exe"
+  id3 = Spawn_Program ("/c/Pong.exe", "/c/Pong.exe"
   ) ;
   P (scr_sem) ;
   Print ("Process Pong has been created with ID = %d\n",id3);

@@ -13,14 +13,22 @@ int main( int argc , char ** argv )
   holdsched3_sem = Create_Semaphore("holdsched3_sem",0);
 
   for (i=0; i < 10; i++) {
-    for(j=0;j<20000;j++);
+    for(j=0;j<20000;j++){
+            if((i+j)%2 == 0){
+                Print("+");
+            }
+        }
     Print("1");
   }
 
   V(holdsched3_sem);
 
   for (i=0; i < 10; i++) {
-    for(j=0;j<20000;j++);
+    for(j=0;j<20000;j++){
+       if((i+j)%2 == 0){
+           Print("+");
+        }
+    }
     Print("1");
   }
   
