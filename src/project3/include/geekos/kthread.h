@@ -13,6 +13,9 @@
 #include <geekos/ktypes.h>
 #include <geekos/list.h>
 
+#define SCHED_RR 0
+#define SCHED_MLF 1
+
 struct Kernel_Thread;
 struct User_Context;
 struct Interrupt_State;
@@ -150,6 +153,11 @@ extern int g_needReschedule;
 extern volatile int g_preemptionDisabled;
 
 /*
+ * MLF v RR ?.
+ */
+extern int g_currentPolicy; 
+
+/*
  * Thread-local data information
  */
 #define MIN_DESTRUCTOR_ITERATIONS 4
@@ -164,5 +172,6 @@ extern void *Tlocal_Get(tlocal_key_t);
 /* Print list of all threads, for debugging. */
 extern void Dump_All_Thread_List(void);
 
-
+/*Buscar idle y ponerlo en la cola de ultima prioridad*/
+void Demote_Idle(void);
 #endif  /* GEEKOS_KTHREAD_H */

@@ -14,6 +14,8 @@
 
 extern volatile ulong_t g_numTicks;
 
+extern ulong_t g_Quantum;
+
 typedef void (*timerCallback)(int);
 
 void Init_Timer(void);
