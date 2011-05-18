@@ -18,6 +18,12 @@
 #include <geekos/tss.h>
 #include <geekos/user.h>
 
+#ifdef DEBUG_USER
+#define DEBUG_PRINT(ftm,...) do{ Print(ftm, ## __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(ftm, ...) do{ } while ( false )
+#endif
+
 /*
  * This module contains common functions for implementation of user
  * mode processes.
@@ -29,7 +35,8 @@
  */
 void Attach_User_Context(struct Kernel_Thread* kthread, struct User_Context* context)
 {
-    KASSERT(context != 0);
+    KASSERT(context != NULL);
+    KASSERT(kthread != NULL);
     kthread->userContext = context;
 
     Disable_Interrupts();
@@ -51,19 +58,21 @@ void Attach_User_Context(struct Kernel_Thread* kthread, struct User_Context* con
  */
 void Detach_User_Context(struct Kernel_Thread* kthread)
 {
+    KASSERT(kthread != NULL);
+
     struct User_Context* old = kthread->userContext;
 
     kthread->userContext = 0;
 
     if (old != 0) {
-	int refCount;
+    int refCount;
 
-	Disable_Interrupts();
+    Disable_Interrupts();
         --old->refCount;
-	refCount = old->refCount;
-	Enable_Interrupts();
+    refCount = old->refCount;
+    Enable_Interrupts();
 
-	/*Print("User context refcount == %d\n", refCount);*/
+    DEBUG_PRINT("User context refcount == %d\n", refCount);
         if (refCount == 0)
             Destroy_User_Context(old);
     }
@@ -83,8 +92,11 @@ void Detach_User_Context(struct Kernel_Thread* kthread)
  *   should return ENOTFOUND if the reason for failure is that
  *   the executable file doesn't exist.
  */
-int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
+ 
+ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThread)
 {
+    KASSERT(program != NULL);
+    KASSERT(command != NULL); 
     /*
      * Hints:
      * - Call Read_Fully() to load the entire executable into a memory buffer
@@ -98,8 +110,53 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
      * If all goes well, store the pointer to the new thread in
      * pThread and return 0.  Otherwise, return an error code.
      */
-    TODO("Spawn a process by reading an executable from a filesystem");
+    /* Por Victor Rosales */
+
+    char *exeFileData = 0;
+    ulong_t exeFileLength = 0;
+    struct Exe_Format exeFormat;
+    struct User_Context *userContext = NULL;
+    struct Kernel_Thread *process = NULL;
+    int ret = 0;
+
+    ret = Read_Fully(program, (void**) &exeFileData, &exeFileLength);
+    if (ret != 0) {
+        ret = ENOTFOUND;
+        goto error;
+    }
+
+    ret = Parse_ELF_Executable(exeFileData, exeFileLength, &exeFormat);
+    if (ret != 0) {
+        ret = ENOEXEC;
+        goto error;
+    }
+
+    ret = Load_User_Program(exeFileData, exeFileLength, &exeFormat,
+                            command, &userContext);
+    if (ret != 0) {
+        ret = -1;
+        goto error;
+    }
+
+    process = Start_User_Thread(userContext, false);
+    if (process == NULL) {
+        ret = -1;
+        goto error;
+    }
+
+    *pThread = process;
+
+    ret =(*pThread)->pid;
+
+error:
+    if (exeFileData)
+        Free(exeFileData);
+
+    exeFileData = 0;
+ 
+    return ret;
 }
+
 
 /*
  * If the given thread has a User_Context,
@@ -108,15 +165,20 @@ int Spawn(const char *program, const char *command, struct Kernel_Thread **pThre
  * Params:
  *   kthread - the thread that is about to execute
  *   state - saved processor registers describing the state when
- *      the thread was interrupted
+ *   the thread was interrupted
  */
+
 void Switch_To_User_Context(struct Kernel_Thread* kthread, struct Interrupt_State* state)
 {
+    KASSERT(kthread != NULL);
     /*
      * Hint: Before executing in user mode, you will need to call
      * the Set_Kernel_Stack_Pointer() and Switch_To_Address_Space()
      * functions.
      */
-    TODO("Switch to a new user address space, if necessary");
+    if (kthread->userContext != NULL) {
+        Switch_To_Address_Space(kthread->userContext);
+        Set_Kernel_Stack_Pointer(((ulong_t) kthread->stackPage) + PAGE_SIZE);
+    }
 }
 

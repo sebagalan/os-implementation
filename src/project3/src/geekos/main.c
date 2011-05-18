@@ -78,15 +78,11 @@ void Main(struct Boot_Info* bootInfo)
     Print("Welcome to GeekOS!\n");
     Set_Current_Attr(ATTRIB(BLACK, GRAY));
 
-
-
-
-    Spawn_Init_Process();
-
+	Spawn_Init_Process();
     /* Now this thread is done. */
-    Exit(0);
+		
+	Exit(0);
 }
-
 
 
 static void Mount_Root_Filesystem(void)
@@ -95,15 +91,10 @@ static void Mount_Root_Filesystem(void)
 	Print("Failed to mount /" ROOT_PREFIX " filesystem\n");
     else
 	Print("Mounted /" ROOT_PREFIX " filesystem!\n");
-
 }
-
-
-
-
-
 
 static void Spawn_Init_Process(void)
 {
-    TODO("Spawn the init process");
+    struct Kernel_Thread *userThread = NULL;
+    Spawn(INIT_PROGRAM, INIT_PROGRAM, &userThread);
 }
