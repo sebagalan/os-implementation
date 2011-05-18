@@ -16,6 +16,14 @@
 #include <geekos/string.h>
 #include <geekos/kthread.h>
 #include <geekos/malloc.h>
+#include <geekos/user.h>
+
+#ifdef DEBUG_KTHREAD
+#define DEBUG_PRINT(ftm,...) do{ Print(ftm, ## __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(ftm, ...) do{ } while ( false )
+#endif
+
 
 
 /* ----------------------------------------------------------------------
@@ -110,7 +118,7 @@ static void Init_Thread(struct Kernel_Thread* kthread, void* stackPage,
  */
 static struct Kernel_Thread* Create_Thread(int priority, bool detached)
 {
-    struct Kernel_Thread* kthread;
+    struct Kernel_Thread* kthread = NULL;
     void* stackPage = 0;
 
     /*
@@ -129,7 +137,8 @@ static struct Kernel_Thread* Create_Thread(int priority, bool detached)
 	return 0;
     }
 
-    /*Print("New thread @ %x, stack @ %x\n", kthread, stackPage); */
+   /* DEBUG_PRINT("New thread @ %x, stack @ %x\n", 
+		(unsigned int )kthread, (unsigned int )stackPage); */
 
     /*
      * Initialize the stack pointer of the new thread
@@ -222,7 +231,7 @@ static void Push_General_Registers(struct Kernel_Thread* kthread)
      */
     Push(kthread, 0);  /* eax */
     Push(kthread, 0);  /* ebx */
-    Push(kthread, 0);  /* edx */
+    Push(kthread, 0);  /* ecx */
     Push(kthread, 0);  /* edx */
     Push(kthread, 0);  /* esi */
     Push(kthread, 0);  /* edi */
@@ -305,7 +314,9 @@ static void Setup_Kernel_Thread(
 /*static*/ void Setup_User_Thread(
     struct Kernel_Thread* kthread, struct User_Context* userContext)
 {
-    /*
+
+	/* Setup_User_Thread() to get the thread ready to
+     * execute in user mode
      * Hints:
      * - Call Attach_User_Context() to attach the user context
      *   to the Kernel_Thread
@@ -315,9 +326,51 @@ static void Setup_Kernel_Thread(
      * - The esi register should contain the address of
      *   the argument block
      */
-    TODO("Create a new thread to execute in user mode");
-}
+    KASSERT(kthread);
+    KASSERT(userContext); 
 
+    Attach_User_Context(kthread, userContext);
+
+    /* ushort_t dsSelector */
+    Push(kthread, userContext->dsSelector);
+
+    /* Stack pointer */
+    Push(kthread, (userContext->stackPointerAddr));
+    /*
+     * The EFLAGS register will have all bits clear.
+     * The important constraint is that we want to have the IF
+     * bit clear, so that interrupts are disabled when the
+     * thread starts.
+     */
+    Push(kthread, EFLAGS_IF); /* EFLAGS */
+
+    /* ushort_t csSelector */
+    Push(kthread, userContext->csSelector);
+
+    /* Push the address of the start function. */
+    Push(kthread, userContext->entryAddr);
+
+    /* Push fake error code and interrupt number. */
+    Push(kthread, 0UL);
+    Push(kthread, 0UL);
+
+    /* Push initial values for general-purpose registers. */
+    Push(kthread, 0UL); /* eax */
+    Push(kthread, 0UL); /* ebx */
+    Push(kthread, 0UL); /* ecx */
+    Push(kthread, 0UL); /* edx */
+    Push(kthread, userContext->argBlockAddr); /* esi */
+    Push(kthread, 0UL); /* edi */
+    Push(kthread, 0UL); /* ebp */
+    /*
+     * Push values for saved segment registers.
+     * Only the ds and es registers will contain valid selectors.
+     */
+    Push(kthread, (ulong_t)userContext->dsSelector); /* ds */
+    Push(kthread, (ulong_t)userContext->dsSelector); /* es */
+    Push(kthread, (ulong_t)userContext->dsSelector); /* fs */
+    Push(kthread, (ulong_t)userContext->dsSelector); /* gs */
+}
 
 /*
  * This is the body of the idle thread.  Its job is to preserve
@@ -364,6 +417,9 @@ static void Reaper(ulong_t arg)
 		Print("Reaper: disposing of thread @ %x, stack @ %x\n",
 		    kthread, kthread->stackPage);
 #endif
+		DEBUG_PRINT("Reaper: disposing of thread @ %x, stack @ %x\n",
+			(unsigned int)kthread, (unsigned int)kthread->stackPage);
+
 		Destroy_Thread(kthread);
 		kthread = next;
 	    }
@@ -442,10 +498,12 @@ static void Tlocal_Exit(struct Kernel_Thread* curr) {
 /* ----------------------------------------------------------------------
  * Public functions
  * ---------------------------------------------------------------------- */
+int g_currentPolicy = SCHED_MLF;
 
 void Init_Scheduler(void)
 {
     struct Kernel_Thread* mainThread = (struct Kernel_Thread *) KERN_THREAD_OBJ;
+
 
     /*
      * Create initial kernel thread context object and stack,
@@ -509,6 +567,7 @@ struct Kernel_Thread* Start_Kernel_Thread(
 struct Kernel_Thread*
 Start_User_Thread(struct User_Context* userContext, bool detached)
 {
+	KASSERT(userContext != NULL);
     /*
      * Hints:
      * - Use Create_Thread() to create a new "raw" thread object
@@ -517,7 +576,19 @@ Start_User_Thread(struct User_Context* userContext, bool detached)
      * - Call Make_Runnable_Atomic() to schedule the process
      *   for execution
      */
-    TODO("Start user thread");
+    struct Kernel_Thread* kthread = Create_Thread(PRIORITY_USER, detached);
+    if (kthread != 0) {
+        /*
+         * Create the initial context for the thread to make
+         * it schedulable.
+         */
+        Setup_User_Thread(kthread, userContext);
+
+        /* Atomically put the thread on the run queue. */
+        Make_Runnable_Atomic(kthread);
+    }
+
+    return kthread;
 }
 
 /*
@@ -529,6 +600,9 @@ void Make_Runnable(struct Kernel_Thread* kthread)
     KASSERT(!Interrupts_Enabled());
 
     { int currentQ = kthread->currentReadyQueue;
+        if(currentQ < 0 || currentQ > MAX_QUEUE_LEVEL){
+            Print("kt:%p\npid:%i\npriority:%i\ncurrentQ %i\n",kthread,kthread->pid,kthread->priority,currentQ);
+        }
       KASSERT(currentQ >= 0 && currentQ < MAX_QUEUE_LEVEL);
       kthread->blocked = false;
       Enqueue_Thread(&s_runQueue[currentQ], kthread);
@@ -560,14 +634,42 @@ struct Kernel_Thread* Get_Current(void)
  */
 struct Kernel_Thread* Get_Next_Runnable(void)
 {
-    struct Kernel_Thread* best = 0;
-
+    struct Kernel_Thread* best = NULL, *tmp = NULL;
+    int priority = 0, i= 0;
     /* Find the best thread from the highest-priority run queue */
-    TODO("Find a runnable thread from run queues");
 
-/*
- *    Print("Scheduling %x\n", best);
- */
+    if(g_currentPolicy == SCHED_MLF){
+        if (g_currentThread->priority != PRIORITY_IDLE){
+            if (g_currentThread->blocked && g_currentThread->currentReadyQueue > 0) {
+                g_currentThread->currentReadyQueue--;
+            }
+        }
+
+        for (priority = 0; priority < MAX_QUEUE_LEVEL; priority++) {
+            best = Find_Best(&s_runQueue[priority]);
+            if(best != NULL) break;
+        }
+
+        if (best->currentReadyQueue < MAX_QUEUE_LEVEL-1) {
+            best->currentReadyQueue++;
+        }
+    } else if (g_currentPolicy == SCHED_RR) {
+        /*proyecto 2, pero por cada cola*/
+        for (i = 0; i < MAX_QUEUE_LEVEL; i++) {
+            tmp = Find_Best(&s_runQueue[i]);
+            if (best == NULL && tmp != NULL) {
+                best = tmp;
+                priority = i;
+            } else {
+                if ((tmp != NULL) && ( tmp->priority > best->priority)) {
+                    best = tmp;
+                    priority = i;
+                }
+            }
+        }
+    }
+
+    Remove_Thread(&s_runQueue[priority],best);
     return best;
 }
 
@@ -621,6 +723,11 @@ void Exit(int exitCode)
 {
     struct Kernel_Thread* current = g_currentThread;
 
+/*	#ifdef DEBUG
+		DEBUG_PRINT("Exit!\n");
+		Dump_All_Thread_List();
+	#endif*/
+	
     if (Interrupts_Enabled())
 	Disable_Interrupts();
 
@@ -778,7 +885,8 @@ void Wake_Up_One(struct Thread_Queue* waitQueue)
     if (best != 0) {
 	Remove_Thread(waitQueue, best);
 	Make_Runnable(best);
-	/*Print("Wake_Up_One: waking up %x from %x\n", best, g_currentThread); */
+	/*Print("Wake_Up_One: waking up %p from %p\n", best, g_currentThread); 
+    KASSERT(false);*/
     }
 }
 
@@ -796,7 +904,7 @@ int Tlocal_Create(tlocal_key_t *key, tlocal_destructor_t destructor)
     *key = s_tlocalKeyCounter++;
 
     End_Int_Atomic(iflag);
-  
+
     return 0;
 }
 
@@ -851,5 +959,22 @@ void Dump_All_Thread_List(void)
     Print("]\n");
     Print("%d threads are running\n", count);
 
+    
     End_Int_Atomic(iflag);
+}
+
+void Demote_Idle(void)
+{
+    if(g_currentPolicy == SCHED_MLF){
+        struct Kernel_Thread* kthread = s_runQueue[0].head;
+        while (kthread != 0) {
+            if(kthread->priority == PRIORITY_IDLE) {
+                Remove_Thread(&s_runQueue[0],kthread);
+                kthread->currentReadyQueue = MAX_QUEUE_LEVEL-1;
+                Enqueue_Thread(&s_runQueue[MAX_QUEUE_LEVEL-1],kthread);
+                break;
+            }
+            kthread = Get_Next_In_Thread_Queue(kthread);
+        }
+    }
 }
