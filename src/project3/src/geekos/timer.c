@@ -46,7 +46,7 @@ static int s_spinCountPerTick;
 /*
  * Settable quantum.
  */
-int g_Quantum = DEFAULT_MAX_TICKS;
+ulong_t g_Quantum = DEFAULT_MAX_TICKS;
 
 /*
  * Ticks per second.
@@ -61,6 +61,7 @@ int g_Quantum = DEFAULT_MAX_TICKS;
 #  define Debug(args...)
 #endif
 
+
 /* ----------------------------------------------------------------------
  * Private functions
  * ---------------------------------------------------------------------- */
@@ -71,7 +72,7 @@ static void Timer_Interrupt_Handler(struct Interrupt_State* state)
     struct Kernel_Thread* current = g_currentThread;
 
     Begin_IRQ(state);
-
+    
     /* Update global and per-thread number of ticks */
     ++g_numTicks;
     ++current->numTicks;
@@ -79,7 +80,7 @@ static void Timer_Interrupt_Handler(struct Interrupt_State* state)
     /* update timer events */
     for (i=0; i < timeEventCount; i++) {
 	if (pendingTimerEvents[i].ticks == 0) {
-	    if (timerDebug) Print("timer: event %d expired (%d ticks)\n", 
+	    if (timerDebug) Debug("timer: event %d expired (%d ticks)\n", 
 	        pendingTimerEvents[i].id, pendingTimerEvents[i].origTicks);
 	    (pendingTimerEvents[i].callBack)(pendingTimerEvents[i].id);
 	} else {
@@ -99,13 +100,11 @@ static void Timer_Interrupt_Handler(struct Interrupt_State* state)
 	 * since it consumed a full quantum.
 	 */
         if (current->currentReadyQueue < (MAX_QUEUE_LEVEL - 1)) {
-            /*Print("process %d moved to ready queue %d\n", current->pid, current->currentReadyQueue); */
+            Debug("process %d moved to ready queue %d\n", current->pid, current->currentReadyQueue); 
             current->currentReadyQueue++;
         }
 
     }
-
-
     End_IRQ(state);
 }
 
@@ -202,7 +201,7 @@ void Init_Timer(void)
      * reasonable.
      */
 
-    Print("Initializing timer...\n");
+    Debug("Initializing timer...\n");
 
     /* configure for default clock */
     Out_Byte(0x43, 0x36);
@@ -211,7 +210,7 @@ void Init_Timer(void)
 
     /* Calibrate for delay loop */
     Calibrate_Delay();
-    Print("Delay loop: %d iterations per tick\n", s_spinCountPerTick);
+    Debug("Delay loop: %d iterations per tick\n", s_spinCountPerTick);
 
     /* Install an interrupt handler for the timer IRQ */
     Install_IRQ(TIMER_IRQ, &Timer_Interrupt_Handler);
