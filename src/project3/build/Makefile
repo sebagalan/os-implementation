@@ -182,11 +182,11 @@ GENERRS := $(PERL) $(PROJECT_ROOT)/scripts/generrs
 # ----------------------------------------------------------------------
 
 # Flags used for all C source files
-GENERAL_OPTS :=  -Wall $(EXTRA_C_OPTS) 
+GENERAL_OPTS :=  -Wall -g $(EXTRA_C_OPTS) 
 CC_GENERAL_OPTS := $(GENERAL_OPTS) -Werror -Wno-unused-but-set-variable 
 
 # Flags used for kernel C source files
-CC_KERNEL_OPTS := -m32 -g -DGEEKOS -I$(PROJECT_ROOT)/include -nostdlib
+CC_KERNEL_OPTS := -m32 -DGEEKOS -I$(PROJECT_ROOT)/include -nostdlib
 
 # Flags user for kernel assembly files
 NASM_KERNEL_OPTS := -I$(PROJECT_ROOT)/src/geekos/ -f elf $(EXTRA_NASM_OPTS)

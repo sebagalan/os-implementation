@@ -12,6 +12,7 @@ floppya: 1_44=fd.img, status=inserted
 ata0-master: type=disk, path=diskc.img, cylinders=40, heads=8, spt=64
 
 log: ./bochs.out
+keyboard_mapping: enabled =1 , map=/usr/share/bochs/keymaps/x11-pc-us.map
 keyboard_serial_delay: 200
 #floppy_command_delay: 500
 vga_update_interval: 300000
@@ -20,7 +21,8 @@ mouse: enabled=0
 private_colormap: enabled=0
 i440fxsupport: enabled=0
 #newharddrivesupport: enabled=1
-
+gdbstub: enabled=1, port=1234, text_base=0,
+data_base=0, bss_base=0
 # Uncomment this to write all bochs debugging messages to
 # bochs.out.  This produces a lot of output, but can be very
 # useful for debugging the kernel.
