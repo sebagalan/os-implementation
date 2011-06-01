@@ -329,7 +329,7 @@ static void Setup_Kernel_Thread(
      * bit clear, so that interrupts are disabled when the
      * thread starts.
      */
-    Push(kthread, 0UL); /* EFLAGS */
+    Push(kthread, EFLAGS_IF); /* EFLAGS */
 
     /* ushort_t csSelector */
     Push(kthread, userContext->csSelector);
@@ -483,6 +483,7 @@ static void Tlocal_Exit(struct Kernel_Thread* curr) {
 /* ----------------------------------------------------------------------
  * Public functions
  * ---------------------------------------------------------------------- */
+int g_currentPolicy = SCHED_MLF;
 
 void Init_Scheduler(void)
 {
@@ -614,14 +615,40 @@ struct Kernel_Thread* Get_Current(void)
  */
 struct Kernel_Thread* Get_Next_Runnable(void)
 {
-    struct Kernel_Thread* best = 0;
+    struct Kernel_Thread* best = NULL, *tmp = NULL;
+    int priority = 0, i= 0;
 
-    /* Find the best thread from the highest-priority run queue */
-    TODO("Find a runnable thread from run queues");
+    if(g_currentPolicy == SCHED_MLF){
+        if (g_currentThread->priority != PRIORITY_IDLE){
+            if (g_currentThread->blocked && g_currentThread->currentReadyQueue > 0) {
+                g_currentThread->currentReadyQueue--;
+            }
+        }
 
-/*
- *    Print("Scheduling %x\n", best);
- */
+        for (priority = 0; priority < MAX_QUEUE_LEVEL; priority++) {
+            best = Find_Best(&s_runQueue[priority]);
+            if(best != NULL) break;
+        }
+
+        if (best->currentReadyQueue < MAX_QUEUE_LEVEL-1) {
+            best->currentReadyQueue++;
+        }
+    } else if (g_currentPolicy == SCHED_RR) {
+        for (i = 0; i < MAX_QUEUE_LEVEL; i++) {
+            tmp = Find_Best(&s_runQueue[i]);
+            if (best == NULL && tmp != NULL) {
+                best = tmp;
+                priority = i;
+            } else {
+                if ((tmp != NULL) && ( tmp->priority > best->priority)) {
+                    best = tmp;
+                    priority = i;
+                }
+            }
+        }
+    }
+
+    Remove_Thread(&s_runQueue[priority],best);
     return best;
 }
 
@@ -878,6 +905,22 @@ void *Tlocal_Get(tlocal_key_t k)
 
     pv = Get_Tlocal_Pointer(k);
     return (void *)*pv;
+}
+
+void Demote_Idle(void)
+{
+    if(g_currentPolicy == SCHED_MLF){
+        struct Kernel_Thread* kthread = s_runQueue[0].head;
+        while (kthread != 0) {
+            if(kthread->priority == PRIORITY_IDLE) {
+                Remove_Thread(&s_runQueue[0],kthread);
+                kthread->currentReadyQueue = MAX_QUEUE_LEVEL-1;
+                Enqueue_Thread(&s_runQueue[MAX_QUEUE_LEVEL-1],kthread);
+                break;
+            }
+            kthread = Get_Next_In_Thread_Queue(kthread);
+        }
+    }
 }
 
 /*
