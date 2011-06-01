@@ -46,8 +46,7 @@ static int s_spinCountPerTick;
 /*
  * Settable quantum.
  */
-int g_Quantum = DEFAULT_MAX_TICKS;
-
+ulong_t g_Quantum = DEFAULT_MAX_TICKS;
 /*
  * Ticks per second.
  * FIXME: should set this to something more reasonable, like 100.
