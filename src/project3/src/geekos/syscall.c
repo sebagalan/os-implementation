@@ -20,7 +20,13 @@
 #include <geekos/user.h>
 #include <geekos/timer.h>
 #include <geekos/vfs.h>
+#include <geekos/sem.h>
 
+#ifdef DEBUG_SYSCALL
+#define DEBUG_PRINT(ftm,...) do{ Print(ftm, ## __VA_ARGS__ ); } while( false )
+#else
+#define DEBUG_PRINT(ftm, ...) do{ } while ( false )
+#endif
 /*
  * Null system call.
  * Does nothing except immediately return control back
@@ -247,10 +253,18 @@ static int Sys_GetPID(struct Interrupt_State* state)
  */
 static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
 {
-    TODO("SetSchedulingPolicy system call");
-    return 0;
+    int result = 0;
+    if((state->ebx < 2) &&  (state->ecx >= 2 && state->ecx <= 200)){
+        g_currentPolicy = state->ebx;
+        g_Quantum = state->ecx;
+        if(g_currentPolicy == SCHED_MLF){
+            Demote_Idle(); 
+        }
+    }else{
+        result = -1;
+    }
+    return result;
 }
-
 /*
  * Get the time of day.
  * Params:
@@ -260,8 +274,7 @@ static int Sys_SetSchedulingPolicy(struct Interrupt_State* state)
  */
 static int Sys_GetTimeOfDay(struct Interrupt_State* state)
 {
-    TODO("GetTimeOfDay system call");
-    return 0;
+    return g_numTicks;
 }
 
 /*
@@ -274,8 +287,31 @@ static int Sys_GetTimeOfDay(struct Interrupt_State* state)
  */
 static int Sys_CreateSemaphore(struct Interrupt_State* state)
 {
-    TODO("CreateSemaphore system call");
-    return 0;
+    char *semName = NULL;
+    int retVal = 0;
+
+    semName = (char*) Malloc(MAX_SEMAPHORE_NAME);
+    if (semName == NULL)
+        goto memfail;
+
+    memset(semName, '\0', MAX_SEMAPHORE_NAME);
+    if(!Copy_From_User(semName, state->ebx, state->ecx)){
+        retVal = EUNSPECIFIED;
+        goto fail;
+    }
+    Enable_Interrupts();
+    retVal = CreateSemaphore(semName,state->ecx,state->edx);
+    Disable_Interrupts();
+    DEBUG_PRINT("Sys_Create_Semaphore %s, %i\n",semName,retVal);
+    return retVal;
+
+memfail:
+    retVal = ENOMEM;
+
+fail:
+    if(semName)
+        Free(semName);
+    return retVal;
 }
 
 /*
@@ -289,8 +325,12 @@ static int Sys_CreateSemaphore(struct Interrupt_State* state)
  */
 static int Sys_P(struct Interrupt_State* state)
 {
-    TODO("P (semaphore acquire) system call");
-    return 0;
+    int retVal = 0;
+    DEBUG_PRINT("%i P(%i)\n",g_currentThread->pid, state->ebx);
+    Enable_Interrupts();
+    retVal = P(state->ebx);
+    Disable_Interrupts();
+    return retVal;
 }
 
 /*
@@ -302,8 +342,12 @@ static int Sys_P(struct Interrupt_State* state)
  */
 static int Sys_V(struct Interrupt_State* state)
 {
-    TODO("V (semaphore release) system call");
-    return 0;
+    int retVal = 0;
+    DEBUG_PRINT("%i V(%i)\n",g_currentThread->pid, state->ebx);
+    Enable_Interrupts();
+    retVal = V(state->ebx);
+    Disable_Interrupts();
+    return retVal;
 }
 
 /*
@@ -315,8 +359,12 @@ static int Sys_V(struct Interrupt_State* state)
  */
 static int Sys_DestroySemaphore(struct Interrupt_State* state)
 {
-    TODO("DestroySemaphore system call");
-    return 0;
+    int retVal = 0;
+    DEBUG_PRINT("call Sys_DestroySemaphore %i\n",state->ebx);
+    Enable_Interrupts();
+    retVal = DestroySemaphore(state->ebx);
+    Disable_Interrupts();
+    return  retVal;
 }
 
 
