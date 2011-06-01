@@ -8,13 +8,14 @@
 
 struct Semaphore {
     char name[MAX_SEMAPHORE_NAME+1]; /* '\0' terminated */
-    unsigned int resourcesCount;
+    int resourcesCount;
     bool available;
     unsigned int refCounter;
     struct Thread_Queue waitingThreads;
 };
 
 extern struct Semaphore g_Semaphores[MAX_NUM_SEMAPHORES];
+
 
 extern int CreateSemaphore(char *name, int nameLenght, int ival);
 int P(int sem);

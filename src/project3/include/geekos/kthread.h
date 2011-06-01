@@ -14,6 +14,9 @@
 #include <geekos/list.h>
 #include <geekos/bitset.h>
 
+#define SCHED_RR 0
+#define SCHED_MLF 1
+
 struct Kernel_Thread;
 struct User_Context;
 struct Interrupt_State;
@@ -107,6 +110,8 @@ typedef void (*Thread_Start_Func)(ulong_t arg);
 /*
  * Scheduler operations.
  */
+extern int g_currentPolicy;
+
 void Init_Scheduler(void);
 struct Kernel_Thread* Start_Kernel_Thread(
     Thread_Start_Func startFunc,
@@ -124,7 +129,7 @@ void Yield(void);
 void Exit(int exitCode) __attribute__ ((noreturn));
 int Join(struct Kernel_Thread* kthread);
 struct Kernel_Thread* Lookup_Thread(int pid);
-
+void Demote_Idle(void);
 /*
  * Thread context switch function, defined in lowlevel.asm
  */
